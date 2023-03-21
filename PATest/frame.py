@@ -1,0 +1,198 @@
+from dataclasses import dataclass
+from enum import Flag
+
+
+class FRAME_TYPES(Flag):
+    '''
+        For general usages:
+    '''
+    '''Types of Frames'''
+    FRAME_CONFIG = 0
+    FRAME_TEST = 0x1
+    FRAME_WORK = 0x2
+    FRAME_RESERVED = 0x3
+    FRAME_UNKNOWN = 0x3
+
+    '''Types of Configuration Frames'''
+    CONFIG_RANDOM_SEED = (FRAME_CONFIG.value << 2) | 0
+    CONFIG_PARAMETER_REG = (FRAME_CONFIG.value << 2) | 0x1
+    CONFIG_NEURON_RAM = (FRAME_CONFIG.value << 2) | 0x2
+    CONFIG_WEIGHT_RAM = (FRAME_CONFIG.value << 2) | 0x3
+
+    CONFIG_TYPE1 = CONFIG_RANDOM_SEED
+    CONFIG_TYPE2 = CONFIG_PARAMETER_REG
+    CONFIG_TYPE3 = CONFIG_NEURON_RAM
+    CONFIG_TYPE4 = CONFIG_WEIGHT_RAM
+
+    '''Types of Test Frames'''
+    TEST_RANDOM_SEED_REG = (FRAME_TEST.value << 2) | 0
+    TEST_PARAMETER_REG = (FRAME_TEST.value << 2) | 0x01
+    TEST_NEURON_RAM = (FRAME_TEST.value << 2) | 0x02
+    TEST_WEIGHT_RAM = (FRAME_TEST.value << 2) | 0x03
+
+    TEST_TYPE1 = TEST_RANDOM_SEED_REG
+    TEST_TYPE2 = TEST_PARAMETER_REG
+    TEST_TYPE3 = TEST_NEURON_RAM
+    TEST_TYPE4 = TEST_WEIGHT_RAM
+
+
+@dataclass
+class FrameMasks:
+    '''
+        Format of data package or single frame for general usages:
+    '''
+    '''Format of single frame'''
+    # Header
+    GENERAL_HEADER_OFFSET = 60
+    GENERAL_HEADER_MASK = (1 << 4) - 1
+
+    GENERAL_FRAME_TYPE_OFFSET = GENERAL_HEADER_OFFSET
+    GENERAL_FRAME_TYPE_MASK = GENERAL_HEADER_MASK
+
+    # Chip address
+    GENERAL_CHIP_ADDR_OFFSET = 50
+    GENERAL_CHIP_ADDR_MASK = (1 << 10) - 1
+
+    # Core address
+    GENERAL_CORE_ADDR_OFFSET = 40
+    GENERAL_CORE_ADDR_MASK = (1 << 10) - 1
+
+    # Core* address
+    GENERAL_CORE_STAR_ADDR_OFFSET = 30
+    GENERAL_CORE_STAR_ADDR_MASK = (1 << 10) - 1
+
+    # Global core = Chip address + core address
+    GENERAL_CORE_GLOBAL_ADDR_OFFSET = GENERAL_CORE_ADDR_OFFSET
+    GENERAL_CORE_GLOBAL_ADDR_MASK = (1 << 20) - 1
+
+    # Payload
+    GENERAL_PAYLOAD_OFFSET = 0
+    GENERAL_PAYLOAD_MASK = (1 << 20) - 1
+
+    '''Format of startup frame of data package'''
+    GENERAL_PACKAGE_OFFSET = 0
+    GENERAL_PACKAGE_MASK = (1 << 20) - 1
+
+    GENERAL_PACKAGE_SRAM_START_ADDR_OFFSET = 20
+    GENERAL_PACKAGE_SRAM_START_ADDR_MASK = (1 << 10) - 1
+
+    GENERAL_PACKAGE_TYPE_OFFSET = 19
+    GENERAL_PACKAGE_TYPE_MASK = 0x1
+
+    GENERAL_PACKAGE_COUNT_OFFSET = GENERAL_PACKAGE_OFFSET
+    GENERAL_PACKAGE_COUNT_MASK = (1 << 19) - 1
+
+    # ----------------------------------------
+    '''General Configuration Frame'''
+    CONFIG_GENERAL_PAYLOAD_OFFSET = GENERAL_PAYLOAD_OFFSET
+    CONFIG_GENERAL_PAYLOAD_MASK = GENERAL_PAYLOAD_MASK
+
+    CONFIG_GENERAL_PACKAGE_OFFSET = GENERAL_PACKAGE_OFFSET
+    CONFIG_GENERAL_PACKAGE_MASK = GENERAL_PACKAGE_MASK
+
+    CONFIG_GENERAL_SRAM_START_ADDR_OFFSET = GENERAL_PACKAGE_SRAM_START_ADDR_OFFSET
+    CONFIG_GENERAL_SRAM_START_ADDR_MASK = GENERAL_PACKAGE_SRAM_START_ADDR_MASK
+
+    CONFIG_GENERAL_PACKAGE_TYPE_OFFSET = GENERAL_PACKAGE_TYPE_OFFSET
+    CONFIG_GENERAL_PACKAGE_TYPE_MASK = GENERAL_PACKAGE_TYPE_MASK
+
+    CONFIG_GENERAL_PACKAGE_COUNT_OFFSET = GENERAL_PACKAGE_COUNT_OFFSET
+    CONFIG_GENERAL_PACKAGE_COUNT_MASK = GENERAL_PACKAGE_COUNT_MASK
+
+    '''Configuration Frame Type I'''
+    CONFIG_TYPE1_PAYLOAD_OFFSET = CONFIG_GENERAL_PAYLOAD_OFFSET
+    CONFIG_TYPE1_PAYLOAD_MASK = CONFIG_GENERAL_PAYLOAD_MASK
+
+    '''Conguration Frame Type II'''
+    CONFIG_TYPE2_PAYLOAD_OFFSET = CONFIG_GENERAL_PAYLOAD_OFFSET
+    CONFIG_TYPE2_PAYLOAD_MASK = CONFIG_GENERAL_PAYLOAD_MASK
+
+    '''Conguration Frame Type III'''
+    # This type is data package
+    CONFIG_TYPE3_PACKAGE_OFFSET = CONFIG_GENERAL_PACKAGE_OFFSET
+    CONFIG_TYPE3_PACKAGE_MASK = CONFIG_GENERAL_PACKAGE_MASK
+
+    '''Conguration Frame Type IV'''
+    # This type is data package
+    CONFIG_TYPE4_PACKAGE_OFFSET = CONFIG_GENERAL_PACKAGE_OFFSET
+    CONFIG_TYPE4_PACKAGE_MASK = CONFIG_GENERAL_PACKAGE_MASK
+
+    '''
+		For test frames:
+    '''
+    '''General Test Frame'''
+    TEST_GENERAL_PAYLOAD_OFFSET = GENERAL_PAYLOAD_OFFSET
+    TEST_GENERAL_PAYLOAD_MASK = GENERAL_PAYLOAD_MASK
+
+    TEST_GENERAL_PACKAGE_OFFSET = GENERAL_PACKAGE_OFFSET
+    TEST_GENERAL_PACKAGE_MASK = GENERAL_PACKAGE_MASK
+
+    TEST_GENERAL_TEST_CHIP_ADDR_OFFSET = GENERAL_CHIP_ADDR_OFFSET
+    TEST_GENERAL_TEST_CHIP_ADDR_MASK = GENERAL_CHIP_ADDR_MASK
+
+    TEST_GENERAL_SRAM_START_ADDR_OFFSET = GENERAL_PACKAGE_SRAM_START_ADDR_OFFSET
+    TEST_GENERAL_SRAM_START_ADDR_MASK = GENERAL_PACKAGE_SRAM_START_ADDR_MASK
+
+    TEST_GENERAL_PACKAGE_TYPE_OFFSET = GENERAL_PACKAGE_TYPE_OFFSET
+    TEST_GENERAL_PACKAGE_TYPE_MASK = GENERAL_PACKAGE_TYPE_MASK
+
+    TEST_GENERAL_PACKAGE_COUNT_OFFSET = GENERAL_PACKAGE_COUNT_OFFSET
+    TEST_GENERAL_PACKAGE_COUNT_MASK = GENERAL_PACKAGE_COUNT_MASK
+
+    '''Test Input & Output Frame Type I'''
+    TEST_TYPE1_PAYLOAD_OFFSET = TEST_GENERAL_PAYLOAD_OFFSET
+    TEST_TYPE1_PAYLOAD_MASK = TEST_GENERAL_PAYLOAD_MASK
+
+    '''Test Input & Output Frame Type II'''
+    TEST_TYPE2_PAYLOAD_OFFSET = TEST_GENERAL_PAYLOAD_OFFSET
+    TEST_TYPE2_PAYLOAD_MASK = TEST_GENERAL_PAYLOAD_MASK
+
+    '''Test Input & Output Frame Type III'''
+    # This type is data package
+    TEST_TYPE3_PACKAGE_OFFSET = TEST_GENERAL_PACKAGE_OFFSET
+    TEST_TYPE3_PACKAGE_MASK = TEST_GENERAL_PACKAGE_MASK
+
+    '''Test Input & Output Frame Type IV'''
+    # This type is data package
+    TEST_TYPE4_PACKAGE_OFFSET = TEST_GENERAL_PACKAGE_OFFSET
+    TEST_TYPE4_PACKAGE_MASK = TEST_GENERAL_PACKAGE_MASK
+
+
+class Frame:
+    @staticmethod
+    def makeTest1InFrame(globalCoreId: int, starId: int, chipId: int = 0) -> int:
+        return (FRAME_TYPES.TEST_TYPE1.value << FrameMasks.GENERAL_FRAME_TYPE_OFFSET) | \
+            (chipId << FrameMasks.GENERAL_CHIP_ADDR_OFFSET) | \
+            (globalCoreId << FrameMasks.GENERAL_CORE_GLOBAL_ADDR_OFFSET) | \
+            (starId << FrameMasks.GENERAL_CORE_STAR_ADDR_OFFSET)
+
+    @staticmethod
+    def makeTest2InFrame(globalCoreId: int, starId: int, chipId: int = 0) -> int:
+        return (FRAME_TYPES.TEST_TYPE2.value << FrameMasks.GENERAL_FRAME_TYPE_OFFSET) | \
+            (chipId << FrameMasks.GENERAL_CHIP_ADDR_OFFSET) | \
+            (globalCoreId << FrameMasks.GENERAL_CORE_GLOBAL_ADDR_OFFSET) | \
+            (starId << FrameMasks.GENERAL_CORE_STAR_ADDR_OFFSET)
+
+    @staticmethod
+    def makeTest3InFrame(globalCoreId: int, starId: int, sram: int, frameNum: int, chipId: int = 0) -> int:
+        return (FRAME_TYPES.TEST_TYPE3.value << FrameMasks.GENERAL_FRAME_TYPE_OFFSET) | \
+            (chipId << FrameMasks.GENERAL_CHIP_ADDR_OFFSET) | \
+            (globalCoreId << FrameMasks.GENERAL_CORE_GLOBAL_ADDR_OFFSET) | \
+            (starId << FrameMasks.GENERAL_CORE_STAR_ADDR_OFFSET) | \
+            (sram << FrameMasks.TEST_GENERAL_SRAM_START_ADDR_OFFSET) | \
+            (1 << FrameMasks.TEST_GENERAL_PACKAGE_TYPE_OFFSET) | \
+            frameNum
+
+    @staticmethod
+    def makeTest4InFrame(globalCoreId: int, starId: int, sram: int, frameNum: int, chipId: int = 0) -> int:
+        return (FRAME_TYPES.TEST_TYPE4.value << FrameMasks.GENERAL_FRAME_TYPE_OFFSET) | \
+            (chipId << FrameMasks.GENERAL_CHIP_ADDR_OFFSET) | \
+            (globalCoreId << FrameMasks.GENERAL_CORE_GLOBAL_ADDR_OFFSET) | \
+            (starId << FrameMasks.GENERAL_CORE_STAR_ADDR_OFFSET) | \
+            (sram << FrameMasks.TEST_GENERAL_SRAM_START_ADDR_OFFSET) | \
+            (1 << FrameMasks.TEST_GENERAL_PACKAGE_TYPE_OFFSET) | \
+            frameNum
+
+
+if __name__ == "__main__":
+    print(FRAME_TYPES(0b0101) == FRAME_TYPES.TEST_NEURON_RAM)

@@ -1,0 +1,15 @@
+[tool.pdm]
+
+[project]
+name = "PAITest"
+version = "0.0.1"
+description = "Test module for PAICORE 2.0"
+authors = [
+    {name = "KafCoppelia", email = "zrpan@stu.pku.edu.cn"},
+]
+dependencies = [
+    "numpy>=1.24.2",
+    "autopep8>=2.0.2",
+]
+requires-python = ">=3.8"
+license = {text = "AGPL v3.0"}
