@@ -58,8 +58,8 @@ Test module for PAICORE 2.0
 
 ## 🗓️ TODO
 
-[ ] 上板验证
+- [ ] 上板验证
 
-[ ] 配置/测试帧III/IV型
+- [ ] 配置/测试帧III/IV型
 
-[ ] 参数检验
+- [ ] 参数检验
