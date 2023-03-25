@@ -131,3 +131,6 @@ dmypy.json
 .pdm*
 
 *.bak
+test
+*.egg
+.vscode
