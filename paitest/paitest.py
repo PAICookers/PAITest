@@ -1,8 +1,8 @@
-from enum import Enum
-from pathlib import Path
-import random
 from .frame import FrameGen
 from .frame_params import *
+from pathlib import Path
+from typing import Union
+import random
 
 
 '''
@@ -12,23 +12,17 @@ from .frame_params import *
 '''
 
 
-class TestChipDirection(Enum):
-    '''
-        For [x, y]
-        Left to right: +x
-        Top to bottom: +y
-    '''
-    EAST = [1, 0]
-    SOUTH = [0, 1]
-    WEST = [-1, 0]
-    NORTH = [0, -1]
-
-
 def GenTestCases(
-    frames_dir: Path,
-    direction: TestChipDirection,
+    save_dir: Union[str, Path] = ...,
+    direction: TestChipDirection = ...,
     groups: int = 1,
 ) -> None:
+
+    if isinstance(save_dir, str):
+        frames_dir = Path(frames_dir)
+    else:
+        frames_dir = save_dir
+
     if not frames_dir.exists():
         frames_dir.mkdir(parents=True, exist_ok=True)
 
@@ -60,8 +54,6 @@ def GenTestCases(
             lcn_type = random.choice(list(LCNTypes))
             input_width_type = random.choice(list(InputWidthTypes))
             spike_width_type = random.choice(list(SpikeWidthTypes))
-
-            print(input_width_type)
 
             if input_width_type == InputWidthTypes.INPUT_WIDTH_8BIT:
                 neuron_num = random.randrange(0, 4096)
