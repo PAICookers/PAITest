@@ -1,7 +1,7 @@
+from .frame_utils import ConfigFrameMasks as CFM
 from enum import Enum, unique
 from typing import List
 from pydantic import BaseModel, Field, Extra, root_validator
-from .frame_utils import ConfigFrameMasks as CFM
 
 
 @unique
@@ -37,6 +37,19 @@ class SpikeWidthTypes(Enum):
     '''Format of Output Spike'''
     SPIKE_WIDTH_1BIT = 0
     SPIKE_WIDTH_8BIT = 1
+
+
+@unique
+class TestChipDirection(Enum):
+    '''
+        For [x, y]
+        Left to right: +x
+        Top to bottom: +y
+    '''
+    EAST = [1, 0]
+    SOUTH = [0, 1]
+    WEST = [-1, 0]
+    NORTH = [0, -1]
 
 
 class ParameterReg(BaseModel, extra=Extra.ignore):
