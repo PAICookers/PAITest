@@ -6,13 +6,13 @@
 
 ## 📦 版本
 
-[v0.0.2](https://github.com/PAICookers/PAITest/releases/tag/v0.0.2)
+[v0.0.3](https://github.com/PAICookers/PAITest/releases/tag/v0.0.3)
 
 ## 🛠️ 使用
 
 生成配置帧及对应测试输入帧，以实现硬件通路的简单测试，后续将芯片实际测试输出帧与预期结果进行对比即可。
 
-由于配置帧/测试帧I型需要配合UART配置使用，因此目前仅采用**配置/测试帧II型**方案。
+由于配置帧/测试帧I型需要配合UART配置使用，因此目前仅采用**配置/测试帧II型**方案，且 `chip_addr` 固定为 `(0, 0)`。
 
 各参数含义如下：
 
@@ -26,11 +26,11 @@
    TestChipDirection.WEST
    TestCHipDirection.NORTH
    ```
-4. 应用示例：
+4. 应用示例（可参考 `main.py` ）：
 
    ```python
-   from paitest import *
    from pathlib import Path
+   from paitest.paitest import GenTestCases, TestChipDirection
 
    '''Path to store the config & test frames'''
    save_path = Path.cwd() / "test"

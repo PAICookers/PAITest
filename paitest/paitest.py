@@ -1,5 +1,5 @@
-from .frame import FrameGen
-from .frame_params import *
+from .frames.frame import FrameGen
+from .frames.frame_params import *
 from pathlib import Path
 from typing import Union
 import random
@@ -16,6 +16,7 @@ def GenTestCases(
     save_dir: Union[str, Path] = ...,
     direction: TestChipDirection = ...,
     groups: int = 1,
+    random_chip_addr: bool = False
 ) -> None:
 
     if isinstance(save_dir, str):
@@ -31,9 +32,14 @@ def GenTestCases(
             open(frames_dir / "testout.bin", "wb") as fo:
 
         for i in range(groups):
-            chip_addr_x, chip_addr_y = random.randrange(
-                0, 2**5), random.randrange(0, 2**5)
-            chip_addr: int = (chip_addr_x << 5) | chip_addr_y
+            chip_addr: int = 0
+            chip_addr_x, chip_addr_y = 0, 0
+            
+            # Need UART configuration when enable random_chip_addr
+            if random_chip_addr:
+                chip_addr_x, chip_addr_y = random.randrange(
+                    0, 2**5), random.randrange(0, 2**5)
+                chip_addr: int = (chip_addr_x << 5) | chip_addr_y
 
             core_addr_x, core_addr_y = random.randrange(
                 0, 2**5), random.randrange(0, 2**5)
@@ -117,7 +123,7 @@ def GenTestCases(
 
 
 if __name__ == "__main__":
-    test_time = 1000
+    test_time = 10
 
     for _ in range(test_time):
         groups = random.randrange(1, 100)
