@@ -1,4 +1,6 @@
-from .paitest import *
+from paitest import GenTestCases
+from frames.frame_params import TestChipDirection
+from pathlib import Path
 
 
 if __name__ == "__main__":
@@ -17,4 +19,4 @@ if __name__ == "__main__":
     direction = args.direction
     groups = args.groups
 
-    GenTestCases(save_path, direction, groups)
+    GenTestCases(save_path, direction, groups, False)

@@ -1,11 +1,13 @@
 [tool.poetry]
 name = "PAITest"
-version = "0.0.2"
+version = "0.0.3"
 description = "Test module for PAICORE 2.0"
 authors = ["KafCoppelia <k740677208@gmail.com>"]
 license = "AGPL v3.0"
 readme = "README.md"
 repository = "https://github.com/PAICookers/PAITest"
+homepage = "https://github.com/PAICookers/PAITest"
+documentation = "https://github.com/PAICookers/PAITest#readme"
 keywords = ["PAICookers", "PAITest", "PAICORE"]
 include = ["./paitest"]
 

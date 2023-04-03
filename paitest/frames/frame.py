@@ -210,14 +210,3 @@ class FrameGen:
     ) -> int:
         return GenTestInFrame(
             FT.TEST_TYPE4, chip_addr, core_addr, core_star_addr, sram_start_addr=sram_start_addr, package_num=package_num)
-
-
-if __name__ == "__main__":
-    import random
-    # t = FrameGen.GetConfig1FrameGroup(
-    #     0b01010_10101_00110_11111_11111, 0b111111111, 1 << 20 - 1, 0xfffffffffffffffff
-    # )
-    # for i in t:
-    #     print("0x%x" % i)
-
-    print(random.choice(list(WeightPrecisionTypes)))
