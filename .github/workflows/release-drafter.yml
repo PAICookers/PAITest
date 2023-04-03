@@ -36,3 +36,5 @@ jobs:
           name: ${{ env.TAG_NAME }}
           tag: ${{ env.TAG_NAME }}
           publish: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}

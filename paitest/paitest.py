@@ -1,7 +1,7 @@
 from .frames.frame import FrameGen
 from .frames.frame_params import *
 from pathlib import Path
-from typing import Union
+from typing import Union, Literal
 import random
 
 
@@ -14,7 +14,11 @@ import random
 
 def GenTestCases(
     save_dir: Union[str, Path] = ...,
-    direction: TestChipDirection = ...,
+    direction: Literal[
+        "EAST", "East", "east",
+        "SOUTH", "South", "south",
+        "WEST", "West", "west",
+        "NORTH", "North", "north"] = ...,
     groups: int = 1,
     random_chip_addr: bool = False
 ) -> None:
@@ -27,6 +31,8 @@ def GenTestCases(
     if not frames_dir.exists():
         frames_dir.mkdir(parents=True, exist_ok=True)
 
+    test_chip_dirc: TestChipDirection = TestChipDirection[direction.upper()]
+    
     with open(frames_dir / "config.bin", "wb") as fc, \
             open(frames_dir / "testin.bin", "wb") as fi, \
             open(frames_dir / "testout.bin", "wb") as fo:
@@ -34,7 +40,7 @@ def GenTestCases(
         for i in range(groups):
             chip_addr: int = 0
             chip_addr_x, chip_addr_y = 0, 0
-            
+
             # Need UART configuration when enable random_chip_addr
             if random_chip_addr:
                 chip_addr_x, chip_addr_y = random.randrange(
@@ -45,15 +51,15 @@ def GenTestCases(
                 0, 2**5), random.randrange(0, 2**5)
             core_addr: int = (core_addr_x << 5) | core_addr_y
 
-            core_star_addr_x, core_star_addr_y = random.randrange(
-                0, 2**5), random.randrange(0, 2**5)
+            # Random core* address is not supported
+            core_star_addr_x, core_star_addr_y = 0, 0
             core_star_addr: int = (core_star_addr_x << 5) | core_star_addr_y
 
             config_frames_group: List[int] = []
             test_outframe_group: List[int] = []
 
             test_chip_addr_x, test_chip_addr_y = chip_addr_x + \
-                direction.value[0], chip_addr_y + direction.value[1]
+                test_chip_dirc.value[0], chip_addr_y + test_chip_dirc.value[1]
             test_chip_addr: int = (test_chip_addr_x << 5) | test_chip_addr_y
 
             weight_width_type = random.choice(list(WeightPrecisionTypes))
@@ -92,6 +98,7 @@ def GenTestCases(
             print("#12 SNN enable:         %s" %
                   ("True" if target_lcn else "False"))
             print("#13 Target LCN:         0x%x" % target_lcn)
+            print("#14 Test chip addr:     0x%x, %s" % (test_chip_addr, direction.upper()))
             print(f"----- Configuration frame: {i+1}/{groups} End -----")
 
             config_frames_group, test_outframe_group = FrameGen.GenConfig2FrameGroup(
