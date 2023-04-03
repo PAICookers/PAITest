@@ -1,5 +1,5 @@
-from frames.frame import FrameGen
-from frames.frame_params import *
+from .frames.frame import FrameGen
+from .frames.frame_params import *
 from pathlib import Path
 from typing import Union
 import random
@@ -123,7 +123,7 @@ def GenTestCases(
 
 
 if __name__ == "__main__":
-    test_time = 1000
+    test_time = 10
 
     for _ in range(test_time):
         groups = random.randrange(1, 100)

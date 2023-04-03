@@ -26,12 +26,11 @@
    TestChipDirection.WEST
    TestCHipDirection.NORTH
    ```
-4. 应用示例：
+4. 应用示例（可参考 `main.py` ）：
 
    ```python
-   from paitest import GenTestCases
-   from frames.frame_params import TestChipDirection
    from pathlib import Path
+   from paitest.paitest import GenTestCases, TestChipDirection
 
    '''Path to store the config & test frames'''
    save_path = Path.cwd() / "test"
