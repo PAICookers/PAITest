@@ -24,7 +24,7 @@ def GenTestCases(
 ) -> None:
 
     if isinstance(save_dir, str):
-        frames_dir = Path(frames_dir)
+        frames_dir = Path(save_dir)
     else:
         frames_dir = save_dir
 
@@ -32,7 +32,7 @@ def GenTestCases(
         frames_dir.mkdir(parents=True, exist_ok=True)
 
     test_chip_dirc: TestChipDirection = TestChipDirection[direction.upper()]
-    
+
     with open(frames_dir / "config.bin", "wb") as fc, \
             open(frames_dir / "testin.bin", "wb") as fi, \
             open(frames_dir / "testout.bin", "wb") as fo:
@@ -98,11 +98,14 @@ def GenTestCases(
             print("#12 SNN enable:         %s" %
                   ("True" if target_lcn else "False"))
             print("#13 Target LCN:         0x%x" % target_lcn)
-            print("#14 Test chip addr:     0x%x, %s" % (test_chip_addr, direction.upper()))
+            print("#14 Test chip addr:     0x%x, %s" %
+                  (test_chip_addr, direction.upper()))
             print(f"----- Configuration frame: {i+1}/{groups} End -----")
 
             config_frames_group, test_outframe_group = FrameGen.GenConfig2FrameGroup(
-                chip_addr, core_addr, core_star_addr,
+                chip_addr,
+                core_addr,
+                core_star_addr,
                 weight_width_type=weight_width_type,
                 lcn_type=lcn_type,
                 input_width_type=input_width_type,
@@ -135,7 +138,7 @@ if __name__ == "__main__":
     for _ in range(test_time):
         groups = random.randrange(1, 100)
         try:
-            GenTestCases(Path("./test"), TestChipDirection.EAST, groups)
+            GenTestCases(Path("./test"), "EAST", groups)
         except Exception as e:
             print(e)
 

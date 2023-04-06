@@ -1,4 +1,3 @@
-from pathlib import Path
 from paitest.paitest import GenTestCases
 
 
@@ -12,11 +11,11 @@ if __name__ == "__main__":
     parser.add_argument("-g", "--groups", type=int,
                         default=1, help="how many groups of test frames to be generated")
     parser.add_argument("-d", "--direction", type=str,
-                        default="EAST", help="Test chip direction relative to the location of core")
+                        default="EAST", help="Test chip direction relative to the location of the core")
 
     args = parser.parse_args()
 
-    save_path = Path(args.path)
+    save_path = args.path
     direction = args.direction
     groups = args.groups
 
