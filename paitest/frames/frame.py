@@ -1,6 +1,6 @@
 from .frame_utils import FrameTypes as FT, FrameMasks as FM
 from .frame_params import *
-from typing import List, Tuple, Union, Optional
+from typing import List, Tuple, Union
 
 
 class FrameGen:
@@ -20,10 +20,10 @@ class FrameGen:
         core_star_addr = core_star_addr & FM.GENERAL_CORE_STAR_ADDR_MASK
         payload = payload & FM.GENERAL_PAYLOAD_MASK
 
-        return (header << FM.GENERAL_HEADER_OFFSET) | \
-            (chip_addr << FM.GENERAL_CORE_ADDR_OFFSET) | \
-            (core_addr << FM.GENERAL_CORE_ADDR_OFFSET) | \
-            (core_star_addr << FM.GENERAL_CORE_STAR_ADDR_OFFSET) | \
+        return (header << FM.GENERAL_HEADER_OFFSET) |               \
+            (chip_addr << FM.GENERAL_CHIP_ADDR_OFFSET) |            \
+            (core_addr << FM.GENERAL_CORE_ADDR_OFFSET) |            \
+            (core_star_addr << FM.GENERAL_CORE_STAR_ADDR_OFFSET) |  \
             (payload << FM.GENERAL_PAYLOAD_OFFSET)
 
     @staticmethod
@@ -38,7 +38,7 @@ class FrameGen:
         payload_list: List[int] = [
             random_seed >> 34,
             random_seed >> 4,
-            random_seed & 0xf << 26
+            (random_seed & 0xf) << 26
         ]
         frames: List[int] = []
         ref_out_frames: List[int] = []
@@ -176,8 +176,7 @@ class FrameGen:
         chip_addr: int = 0,
         core_addr: int = 0,
         core_star_addr: int = 0,
-        sram_start_addr: int = 0,
-        package_num: int = 0
+        package_info: int = ...
     ) -> int:
         return FrameGen.GenTestFrame(
-            FT.TEST_TYPE4, chip_addr, core_addr, core_star_addr, sram_start_addr=sram_start_addr, package_num=package_num)
+            FT.TEST_TYPE4, chip_addr, core_addr, core_star_addr, package_info)
