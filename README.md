@@ -6,7 +6,7 @@
 
 ## 📦 版本
 
-[v0.0.6 Prerelease](https://github.com/PAICookers/PAITest/releases/tag/v0.0.6)
+[v0.0.7 Prerelease](https://github.com/PAICookers/PAITest/releases/tag/v0.0.7)
 
 ## 🛠️ 使用
 
@@ -24,9 +24,11 @@
    - 南：“SOUTH”、"South"、"south"；
    - 西："WEST"、"West"、"west"；
    - 北："NORTH"、“North”、"north"；
-4. 应用示例（也可参考 `main.py` ）：
+4. `verbose`：`-v` 启用打印生成帧详细信息；
+5. `core`：`-c 3, 4` 固定生成帧中的 `CORE_ADDR` 属性；
+6. 应用示例（也可参考 `main.py` ）：
 
-   ```python
+```python
    from pathlib import Path
    from paitest.paitest import GenTestCases
 
@@ -38,7 +40,8 @@
    direction = "EAST"
 
    GenTestCases(save_path, direction, groups)
-   ```
+```
+
 5. 生成的 `N` 组配置帧II型、测试输入帧II型及参考测试输出帧II型在 `save_path` 下：
 
    ```python
