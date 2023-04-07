@@ -10,7 +10,7 @@ def GenCoordinates(groups: int = ...) -> List[Tuple[int, int]]:
         while True:
             x = random.randint(0, 31)
             y = random.randint(0, 31)
-            if (x, y) not in coordinates and (x <= 0b11100 or y <= 0b11100):
+            if (x, y) not in coordinates and (x < 0b11100 or y < 0b11100):
                 coordinates.add((x, y))
                 yield (x, y)
 
@@ -30,6 +30,7 @@ def GenCoreAddr(
     core_addr_list: List[Tuple[int, int]] = []
 
     if isinstance(fixed_core_addr, Tuple):
+        assert fixed_core_addr[0] < 32 and fixed_core_addr[1] < 32
         assert not (fixed_core_addr[0] >=
                     0b11100 and fixed_core_addr[1] >= 0b11100)
 
