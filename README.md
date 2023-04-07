@@ -6,7 +6,7 @@
 
 ## 📦 版本
 
-[v0.0.8 Prerelease](https://github.com/PAICookers/PAITest/releases/tag/v0.0.8)
+[v0.0.9 Prerelease](https://github.com/PAICookers/PAITest/releases/tag/v0.0.9)
 
 ## 🛠️ 使用
 

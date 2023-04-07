@@ -43,6 +43,9 @@ def GenTestCases(
     test_chip_dirc: TestChipDirection = TestChipDirection[direction.upper()]
 
     '''Generate 'groups' random core address first'''
+    if groups > 1008:
+        raise ValueError(f"Value of groups is no more than 1008")
+    
     core_addr_list = GenCoreAddr(groups, fixed_core_addr)
 
     with open(frames_dir / "config.bin", "wb") as fc, \
