@@ -6,7 +6,7 @@
 
 ## 📦 版本
 
-[v0.0.7 Prerelease](https://github.com/PAICookers/PAITest/releases/tag/v0.0.7)
+[v0.0.8 Prerelease](https://github.com/PAICookers/PAITest/releases/tag/v0.0.8)
 
 ## 🛠️ 使用
 
@@ -29,17 +29,20 @@
 6. 应用示例（也可参考 `main.py` ）：
 
 ```python
-   from pathlib import Path
-   from paitest.paitest import GenTestCases
 
-   '''Path to store the config & test frames'''
-   save_path = Path.cwd() / "test"
-   '''N groups(3 frames in each group) of configuration frames to generated'''
-   groups = 1
-   '''PC direction relative to the CORE'''
-   direction = "EAST"
+from pathlib import Path
+from paitest.paitest import GenTestCases
 
-   GenTestCases(save_path, direction, groups)
+'''Path to store the config & test frames'''
+save_path = Path.cwd() / "test"
+'''N groups(3 frames in each group) of configuration frames to generated'''
+groups = 1
+'''PC direction relative to the CORE'''
+direction = "EAST"
+'''Fixed a certain core address if you want test it only'''
+core_addr = (3, 4)
+
+GenTestCases(save_path, direction, groups, fixed_core_addr=core_addr, verbose=True)
 ```
 
 5. 生成的 `N` 组配置帧II型、测试输入帧II型及参考测试输出帧II型在 `save_path` 下：
