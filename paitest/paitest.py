@@ -1,5 +1,6 @@
 from .frames.frame import FrameGen
 from .frames.frame_params import *
+from .cores.cores_utils import GenCoreAddr
 from pathlib import Path
 from typing import List, Union, Literal, Tuple, Optional
 import random
@@ -24,7 +25,7 @@ def GenTestCases(
         4. fixed_chip_addr: Fix the chip address, e.g. (1, 1) for fixing the CHIP_ADDR with (1, 1)
         5. fixed_core_addr: Fix the core address, e.g. (3, 4) for fixing the CORE_ADDR with (3, 4)
         6. verbose: Display the logs
-        
+
         Usages:
         1. Input configuration frame II
         2. Input test frame II
@@ -41,33 +42,29 @@ def GenTestCases(
 
     test_chip_dirc: TestChipDirection = TestChipDirection[direction.upper()]
 
+    '''Generate 'groups' random core address first'''
+    core_addr_list = GenCoreAddr(groups, fixed_core_addr)
+
     with open(frames_dir / "config.bin", "wb") as fc, \
             open(frames_dir / "testin.bin", "wb") as fi, \
             open(frames_dir / "testout.bin", "wb") as fo:
 
         for i in range(groups):
-            chip_addr: int = 0
             chip_addr_x, chip_addr_y = 0, 0
+            chip_addr = 0
 
             # Need UART configuration when enable random_chip_addr
             if isinstance(fixed_chip_addr, Tuple):
                 chip_addr_x, chip_addr_y = fixed_chip_addr
             else:
-                chip_addr_x, chip_addr_y = random.randrange(
-                    0, 2**5), random.randrange(0, 2**5)
+                chip_addr_x, chip_addr_y = random.randint(
+                    0, 2**5), random.randint(0, 2**5)
 
             chip_addr: int = (chip_addr_x << 5) | chip_addr_y
 
-            core_addr: int = 0
-            core_addr_x, core_addr_y = 0, 0
-
-            if isinstance(fixed_core_addr, Tuple):
-                core_addr_x, core_addr_y = fixed_core_addr
-            else:
-                core_addr_x, core_addr_y = random.randrange(
-                    0, 2**5), random.randrange(0, 2**5)
-
-            core_addr: int = (core_addr_x << 5) | core_addr_y
+            core_addr = 0
+            core_addr_x, core_addr_y = core_addr_list[i]
+            core_addr: int = (core_addr_list[i][0] << 5) | core_addr_list[i][1]
 
             # Random core* address is not supported
             core_star_addr_x, core_star_addr_y = 0, 0
@@ -86,40 +83,16 @@ def GenTestCases(
             spike_width_type = random.choice(list(SpikeWidthTypes))
 
             if input_width_type == InputWidthTypes.INPUT_WIDTH_8BIT:
-                neuron_num = random.randrange(0, 4096)
+                neuron_num = random.randint(0, 4096)
             else:
-                neuron_num = random.randrange(0, 512)
+                neuron_num = random.randint(0, 512)
 
             pool_max_en = random.choice([0, 1])
-            tick_wait_start = random.randrange(0, 2**15)
-            tick_wait_end = random.randrange(0, 2**15)
+            tick_wait_start = random.randint(0, 2**15)
+            tick_wait_end = random.randint(0, 2**15)
 
             snn_en = random.choice([0, 1])
-            target_lcn = random.randrange(0, 2**4)
-
-            if verbose:
-                print(f"----- Configuration frame: {i+1}/{groups} Start -----")
-                print("#1  Chip address:       [0x%02x | 0x%02x]" % (
-                    chip_addr_x, chip_addr_y))
-                print("#2  Core address:       [0x%02x | 0x%02x]" % (
-                    core_addr_x, core_addr_y))
-                print("#3  Core star address:  [0x%02x | 0x%02x]" % (
-                    core_star_addr_x, core_star_addr_y))
-                print("#4  Weight width:       0x%x" % weight_width_type.value)
-                print("#5  LCN:                0x%x" % lcn_type.value)
-                print("#6  Input width:        0x%x" % input_width_type.value)
-                print("#7  Spike width:        0x%x" % spike_width_type.value)
-                print("#8  Neuron num:         %d" % neuron_num)
-                print("#9  Pool max enable:    %s" %
-                    ("True" if target_lcn else "False"))
-                print("#10 Tick wait start:    0x%x" % tick_wait_start)
-                print("#11 Tick wait end:      0x%x" % tick_wait_end)
-                print("#12 SNN enable:         %s" %
-                    ("True" if target_lcn else "False"))
-                print("#13 Target LCN:         0x%x" % target_lcn)
-                print("#14 Test chip addr:     0x%x, %s" %
-                    (test_chip_addr, direction.upper()))
-                print(f"----- Configuration frame: {i+1}/{groups} End -----")
+            target_lcn = random.randint(0, 2**4)
 
             config_frames_group, test_outframe_group = FrameGen.GenConfig2FrameGroup(
                 chip_addr,
@@ -139,6 +112,30 @@ def GenTestCases(
                 test_ref_out_included=True
             )
 
+            if verbose:
+                print(f"----- Configuration frame: {i+1}/{groups} Start -----")
+                print("#1  Chip address:       [0x%02x | 0x%02x]" % (
+                    chip_addr_x, chip_addr_y))
+                print("#2  Core address:       [0x%02x | 0x%02x]" % (
+                    core_addr_x, core_addr_y))
+                print("#3  Core star address:  [0x%02x | 0x%02x]" % (
+                    core_star_addr_x, core_star_addr_y))
+                print("#4  Weight width:       0x%x" % weight_width_type.value)
+                print("#5  LCN:                0x%x" % lcn_type.value)
+                print("#6  Input width:        0x%x" % input_width_type.value)
+                print("#7  Spike width:        0x%x" % spike_width_type.value)
+                print("#8  Neuron num:         %d" % neuron_num)
+                print("#9  Pool max enable:    %s" %
+                      ("True" if target_lcn else "False"))
+                print("#10 Tick wait start:    0x%x" % tick_wait_start)
+                print("#11 Tick wait end:      0x%x" % tick_wait_end)
+                print("#12 SNN enable:         %s" %
+                      ("True" if target_lcn else "False"))
+                print("#13 Target LCN:         0x%x" % target_lcn)
+                print("#14 Test chip addr:     0x%x, %s" %
+                      (test_chip_addr, direction.upper()))
+                print(f"----- Configuration frame: {i+1}/{groups} End -----")
+
             test_inframe = FrameGen.GenTest2InFrame(
                 chip_addr, core_addr, core_star_addr)
 
@@ -149,16 +146,3 @@ def GenTestCases(
                     length=8, byteorder="big"))
 
             fi.write(test_inframe.to_bytes(length=8, byteorder="big"))
-
-
-if __name__ == "__main__":
-    test_time = 10
-
-    for _ in range(test_time):
-        groups = random.randrange(1, 100)
-        try:
-            GenTestCases(Path("./test"), "EAST", groups)
-        except Exception as e:
-            print(e)
-
-    print("Test ok")
