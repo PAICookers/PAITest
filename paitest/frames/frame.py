@@ -1,9 +1,22 @@
-from .frame_utils import FrameTypes as FT, FrameMasks as FM
+from .frame_params import FrameTypes as FT, \
+    FrameSubTypes as FST, FrameMasks as FM
 from .frame_params import *
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Literal
 
 
 class FrameGen:
+
+    def __init__(self,
+                 direction: Literal[
+                     "EAST", "East", "east", "SOUTH",
+                     "South", "south", "WEST", "West",
+                     "west", "NORTH", "North", "north"
+                    ],
+                 groups: int, 
+                 verbose):
+        self._verbose = verbose
+        self._groups = groups
+        self._fixed_chip_addr = (0, 0)
 
     @staticmethod
     def GenFrame(
@@ -180,3 +193,24 @@ class FrameGen:
     ) -> int:
         return FrameGen.GenTestFrame(
             FT.TEST_TYPE4, chip_addr, core_addr, core_star_addr, package_info)
+
+
+class FrameUtils:
+
+    @staticmethod
+    def isFrame(frame: bytes, frame_type: FT) -> bool:
+        return frame_type.value == frame[0] >> 4
+
+    @staticmethod
+    def isSubFrame(frame: bytes, frame_subtype: FST) -> bool:
+        return frame_subtype.value == frame[0] >> 4
+
+
+class Frame:
+
+    def __init__(self):
+        pass
+
+    @property
+    def frame_type(self):
+        pass
