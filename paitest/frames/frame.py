@@ -1,32 +1,23 @@
-from .frame_params import FrameTypes as FT, \
-    FrameSubTypes as FST, FrameMasks as FM
+from .frame_params import FrameConfigTypes as FCT, \
+    FrameTestTypes as FTT, FrameWorkTypes as FWT, \
+    FrameMasks as FM
 from .frame_params import *
-from typing import List, Tuple, Union, Literal
+from typing import List, Tuple, Union, TypeVar
+
+SUB_TYPES = TypeVar('SUB_TYPES', FCT, FTT, FWT)
+T = TypeVar('T')
+R = TypeVar('R')
 
 
 class FrameGen:
 
-    def __init__(self,
-                 direction: Literal[
-                     "EAST", "East", "east", "SOUTH",
-                     "South", "south", "WEST", "West",
-                     "west", "NORTH", "North", "north"
-                    ],
-                 groups: int, 
-                 verbose):
-        self._verbose = verbose
-        self._groups = groups
-        self._fixed_chip_addr = (0, 0)
-
     @staticmethod
-    def GenFrame(
-        header: int,
-        chip_addr: int,
-        core_addr: int,
-        core_star_addr: int,
-        payload: int
-    ) -> int:
-
+    def GenFrame(header: int,
+                 chip_addr: int,
+                 core_addr: int,
+                 core_star_addr: int,
+                 payload: int
+                 ) -> int:
         header = header & FM.GENERAL_HEADER_MASK
         chip_addr = chip_addr & FM.GENERAL_CHIP_ADDR_MASK
         core_addr = core_addr & FM.GENERAL_CORE_ADDR_MASK
@@ -38,35 +29,6 @@ class FrameGen:
             (core_addr << FM.GENERAL_CORE_ADDR_OFFSET) |            \
             (core_star_addr << FM.GENERAL_CORE_STAR_ADDR_OFFSET) |  \
             (payload << FM.GENERAL_PAYLOAD_OFFSET)
-
-    @staticmethod
-    def GenConfig1FrameGroup(
-        chip_addr: int = 0,
-        core_addr: int = 0,
-        core_star_addr: int = 0,
-        random_seed: int = ...,
-        test_ref_out_included: bool = ...
-    ) -> Union[List[int], Tuple[List[int], List[int]]]:
-
-        payload_list: List[int] = [
-            random_seed >> 34,
-            random_seed >> 4,
-            (random_seed & 0xf) << 26
-        ]
-        frames: List[int] = []
-        ref_out_frames: List[int] = []
-
-        for p in payload_list:
-            frames.append(FrameGen.GenFrame(FT.CONFIG_TYPE1.value,
-                                            chip_addr, core_addr, core_star_addr, p))
-
-        if test_ref_out_included:
-            ref_out_frames.append(
-                FrameGen.GenFrame(FT.TEST_TYPE1.value, chip_addr, core_addr, core_star_addr, p))
-
-            return frames, ref_out_frames
-
-        return frames
 
     @staticmethod
     def GenConfig2FrameGroup(
@@ -107,8 +69,8 @@ class FrameGen:
         payload_list = pr.GetPayloadList()
 
         for p in payload_list:
-            frames.append(FrameGen.GenFrame(FT.CONFIG_TYPE2.value,
-                                            chip_addr, core_addr, core_star_addr, p))
+            frames.append(FrameGen.GenConfigFrame(FCT.CONFIG_TYPE2,
+                                                  chip_addr, core_addr, core_star_addr, p))
 
             if test_ref_out_included:
                 ref_out_frames.append(
@@ -121,16 +83,24 @@ class FrameGen:
 
         return frames
 
+    @staticmethod
+    def GenConfigFrame(header: FCT,
+                       chip_addr: int,
+                       core_addr: int,
+                       core_star_addr: int,
+                       payload: int
+                       ) -> int:
+        return FrameGen.GenFrame(header.value, chip_addr, core_addr, core_star_addr, payload)
+
     '''Functions of Test Frames Generation'''
     @staticmethod
-    def GenTestFrame(
-        header_type: FT,
-        chip_addr: int = 0,
-        core_addr: int = 0,
-        core_star_addr: int = 0,
-        payload: int = 0
-    ) -> int:
-        return FrameGen.GenFrame(header_type.value, chip_addr, core_addr, core_star_addr, payload)
+    def GenTestFrame(header: FTT,
+                     chip_addr: int,
+                     core_addr: int,
+                     core_star_addr: int,
+                     payload: int = 0
+                     ) -> int:
+        return FrameGen.GenFrame(header.value, chip_addr, core_addr, core_star_addr, payload)
 
     @staticmethod
     def GenTest1InFrame(
@@ -138,7 +108,7 @@ class FrameGen:
         core_addr: int = 0,
         core_star_addr: int = 0
     ) -> int:
-        return FrameGen.GenTestFrame(FT.TEST_TYPE1, chip_addr, core_addr, core_star_addr)
+        return FrameGen.GenTestFrame(FTT.TEST_TYPE1, chip_addr, core_addr, core_star_addr)
 
     @staticmethod
     def GenTest1OutFrame(
@@ -147,7 +117,7 @@ class FrameGen:
         core_star_addr: int = 0,
         random_seed: int = ...
     ) -> int:
-        return FrameGen.GenTestFrame(FT.TEST_TYPE1, test_chip_addr, core_addr, core_star_addr, random_seed)
+        return FrameGen.GenTestFrame(FTT.TEST_TYPE1, test_chip_addr, core_addr, core_star_addr, random_seed)
 
     @staticmethod
     def GenTest2InFrame(
@@ -155,7 +125,7 @@ class FrameGen:
         core_addr: int = 0,
         core_star_addr: int = 0
     ) -> int:
-        return FrameGen.GenTestFrame(FT.TEST_TYPE2, chip_addr, core_addr, core_star_addr)
+        return FrameGen.GenTestFrame(FTT.TEST_TYPE2, chip_addr, core_addr, core_star_addr)
 
     @staticmethod
     def GenTest2OutFrame(
@@ -164,7 +134,7 @@ class FrameGen:
         core_star_addr: int = 0,
         reg_parameters: int = ...
     ) -> int:
-        return FrameGen.GenTestFrame(FT.TEST_TYPE2, test_chip_addr, core_addr, core_star_addr, reg_parameters)
+        return FrameGen.GenTestFrame(FTT.TEST_TYPE2, test_chip_addr, core_addr, core_star_addr, reg_parameters)
 
     @staticmethod
     def GenTest3InFrame(
@@ -173,15 +143,14 @@ class FrameGen:
         core_star_addr: int = 0,
         package_info: int = ...
     ) -> int:
-        return FrameGen.GenTestFrame(
-            FT.TEST_TYPE3, chip_addr, core_addr, core_star_addr, package_info)
+        return FrameGen.GenTestFrame(FTT.TEST_TYPE3, chip_addr, core_addr, core_star_addr, package_info)
 
     @staticmethod
     def GenTest3OutFrame(
         test_chip_addr: int = ...,
         core_addr: int = 0,
         core_star_addr: int = 0
-    ) -> int:
+    ) -> None:
         pass
 
     @staticmethod
@@ -191,26 +160,15 @@ class FrameGen:
         core_star_addr: int = 0,
         package_info: int = ...
     ) -> int:
-        return FrameGen.GenTestFrame(
-            FT.TEST_TYPE4, chip_addr, core_addr, core_star_addr, package_info)
+        return FrameGen.GenTestFrame(FTT.TEST_TYPE4, chip_addr, core_addr, core_star_addr, package_info)
 
 
 class FrameUtils:
 
     @staticmethod
-    def isFrame(frame: bytes, frame_type: FT) -> bool:
+    def isFrame(frame: bytes, frame_type: FrameTypes) -> bool:
         return frame_type.value == frame[0] >> 4
 
     @staticmethod
-    def isSubFrame(frame: bytes, frame_subtype: FST) -> bool:
+    def isSubFrame(frame: bytes, frame_subtype: SUB_TYPES) -> bool:
         return frame_subtype.value == frame[0] >> 4
-
-
-class Frame:
-
-    def __init__(self):
-        pass
-
-    @property
-    def frame_type(self):
-        pass

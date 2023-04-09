@@ -19,31 +19,27 @@ class FrameTypes(Enum):
     FRAME_UNKNOWN = 0x3
 
 
-class FrameSubTypes(Flag):
+@unique
+class FrameConfigTypes(Flag):
     '''Sub-types of Configuration Frames'''
-    CONFIG_RANDOM_SEED = 0b0000
-    CONFIG_PARAMETER_REG = 0b0001
-    CONFIG_NEURON_RAM = 0b0010
-    CONFIG_WEIGHT_RAM = 0b0011
+    CONFIG_TYPE1 = 0b0000
+    CONFIG_TYPE2 = 0b0001
+    CONFIG_TYPE3 = 0b0010
+    CONFIG_TYPE4 = 0b0011
 
-    CONFIG_TYPE1 = CONFIG_RANDOM_SEED
-    CONFIG_TYPE2 = CONFIG_PARAMETER_REG
-    CONFIG_TYPE3 = CONFIG_NEURON_RAM
-    CONFIG_TYPE4 = CONFIG_WEIGHT_RAM
 
+@unique
+class FrameTestTypes(Flag):
     '''Sub-types of Test Frames'''
-    TEST_RANDOM_SEED_REG = 0b0100
-    TEST_PARAMETER_REG = 0b0101
-    TEST_NEURON_RAM = 0b0110
-    TEST_WEIGHT_RAM = 0b0111
-
-    TEST_TYPE1 = TEST_RANDOM_SEED_REG
-    TEST_TYPE2 = TEST_PARAMETER_REG
-    TEST_TYPE3 = TEST_NEURON_RAM
-    TEST_TYPE4 = TEST_WEIGHT_RAM
+    TEST_TYPE1 = 0b0100
+    TEST_TYPE2 = 0b0101
+    TEST_TYPE3 = 0b0110
+    TEST_TYPE4 = 0b0111
     
+
+class FrameWorkTypes(Flag):
     '''Sub-types of Work Frames'''
-    # Reserved
+    pass
 
 
 class ParamTypesForCheck(Enum):
@@ -206,7 +202,7 @@ class SpikeWidthTypes(Enum):
 
 
 @unique
-class TestChipDirection(Enum):
+class Direction(Enum):
     '''
         For [x, y]
         Left to right: +x
