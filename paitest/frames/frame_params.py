@@ -1,7 +1,5 @@
 from dataclasses import dataclass
 from enum import Flag, Enum, unique
-from typing import List
-from pydantic import BaseModel, Field, Extra, root_validator
 
 
 @unique
@@ -20,26 +18,24 @@ class FrameTypes(Enum):
 
 
 @unique
-class FrameConfigTypes(Flag):
+class FrameSubTypes(Flag):
     '''Sub-types of Configuration Frames'''
     CONFIG_TYPE1 = 0b0000
     CONFIG_TYPE2 = 0b0001
     CONFIG_TYPE3 = 0b0010
     CONFIG_TYPE4 = 0b0011
-
-
-@unique
-class FrameTestTypes(Flag):
+    
     '''Sub-types of Test Frames'''
     TEST_TYPE1 = 0b0100
     TEST_TYPE2 = 0b0101
     TEST_TYPE3 = 0b0110
     TEST_TYPE4 = 0b0111
-    
 
-class FrameWorkTypes(Flag):
     '''Sub-types of Work Frames'''
-    pass
+    WORK_TYPE1 = 0b1000
+    WORK_TYPE2 = 0b1001
+    WORK_TYPE3 = 0b1010
+    WORK_TYPE4 = 0b1011
 
 
 class ParamTypesForCheck(Enum):
@@ -59,7 +55,7 @@ class FrameMasks:
     '''Format of single frame'''
     # General mask
     GENERAL_MASK = ((1 << 64) - 1)
-    
+
     # Header
     GENERAL_HEADER_OFFSET = 60
     GENERAL_HEADER_MASK = ((1 << 4) - 1)
@@ -120,6 +116,9 @@ class FrameMasks:
 @dataclass
 class ConfigFrameMasks(FrameMasks):
     '''Specific for Conguration Frame Type II'''
+    
+    '''General'''
+    TOTAL_RANDOM_BITS = 57
 
     '''Frame #1'''
     WEIGHT_WIDTH_OFFSET = 28
@@ -141,7 +140,7 @@ class ConfigFrameMasks(FrameMasks):
     POOL_MAX_MASK = 1
 
     TICK_WAIT_START_HIGH8_OFFSET = 0
-    TICK_WAIT_START_HIGH8_OFFSET = 7
+    TICK_WAIT_START_COMBINATION_OFFSET = 7
     TICK_WAIT_START_HIGH8_MASK = ((1 << 8) - 1)
 
     '''Frame #2'''
@@ -158,7 +157,7 @@ class ConfigFrameMasks(FrameMasks):
     TARGET_LCN_MASK = ((1 << 4) - 1)
 
     TEST_CHIP_ADDR_HIGH3_OFFSET = 0
-    TEST_CHIP_ADDR_HIGH3_OFFSET = 7
+    TEST_CHIP_ADDR_COMBINATION_OFFSET = 7
     TEST_CHIP_ADDR_HIGH3_MASK = ((1 << 3) - 1)
 
     '''Frame #3'''
@@ -199,6 +198,38 @@ class SpikeWidthTypes(Enum):
     '''Format of Output Spike'''
     SPIKE_WIDTH_1BIT = 0
     SPIKE_WIDTH_8BIT = 1
+    
+
+class Coord:
+    
+    def __init__(self, x, y):
+        assert -31 < x < 32
+        assert -31 < y < 32
+        self.x, self.y = x, y
+        
+    def __add__(self, other):
+        return Coord(self.x + other.x, self.y + other.y)
+ 
+    def __sub__(self, other):
+        return Coord(self.x - other.x, self.y - other.y)
+    
+    def __eq__(self, other) -> bool:
+        return self.x == other.x and self.y == other.y
+    
+    def __lt__(self, other) -> bool:
+        '''Whether on the left or below'''
+        return not (self.x > other.x and self.y > other.y)
+
+    def __gt__(self, other) -> bool:
+        '''Whether on the right and above'''
+        return (self.x > other.x and self.y > other.y) or \
+            (self.x == other.x and self.y > other.y) or \
+                (self.x > other.x and self.y == other.y)
+    
+    def __str__(self) -> str:
+        return f"{self.x}, {self.y}"
+    
+    __repr__ = __str__
 
 
 @unique
@@ -208,78 +239,7 @@ class Direction(Enum):
         Left to right: +x
         Top to bottom: +y
     '''
-    EAST = [1, 0]
-    SOUTH = [0, 1]
-    WEST = [-1, 0]
-    NORTH = [0, -1]
-
-
-class ParameterReg(BaseModel, extra=Extra.ignore):
-
-    weight_width_type: WeightPrecisionTypes = Field(
-        default=WeightPrecisionTypes.WEIGHT_WIDTH_1BIT)
-
-    lcn_type: LCNTypes = Field(default=LCNTypes.LCN_1X)
-
-    input_width_type: InputWidthTypes = Field(
-        default=InputWidthTypes.INPUT_WIDTH_8BIT)
-
-    spike_width_type: SpikeWidthTypes = Field(
-        default=SpikeWidthTypes.SPIKE_WIDTH_8BIT)
-
-    neuron_num: int = Field(default=4096)
-    pool_max_en: bool = Field(default=False)
-    tick_wait_start: int = Field(default=0)
-    tick_wait_end: int = Field(default=0)
-    snn_en: bool = Field(default=True)
-    target_lcn: int = Field(default=0)
-    test_chip_addr: int = Field(default=0)
-
-    @root_validator
-    def neuron_num_check(cls, values):
-        if values.get("input_width_type") == InputWidthTypes.INPUT_WIDTH_8BIT:
-            if values.get("neuron_num") > 4096:
-                raise ValueError(
-                    "When using 8-bit input mode, neuron_num <= 4096")
-        else:
-            if values.get("neuron_num") > 512:
-                raise ValueError(
-                    "When using 1-bit input mode, neuron_num <= 512")
-
-        return values
-
-    def GetPayloadList(self) -> List[int]:
-        return [
-            (self.weight_width_type.value << ConfigFrameMasks.WEIGHT_WIDTH_OFFSET) |
-            (self.lcn_type.value << ConfigFrameMasks.LCN_OFFSET) |
-            (self.input_width_type.value << ConfigFrameMasks.INPUT_WIDTH_OFFSET) |
-            (self.spike_width_type.value << ConfigFrameMasks.SPIKE_WIDTH_OFFSET) |
-            (self.neuron_num << ConfigFrameMasks.NEURON_NUM_OFFSET) |
-            (self.pool_max_en << ConfigFrameMasks.POOL_MAX_OFFSET) |
-            ((self.tick_wait_start >> ConfigFrameMasks.TICK_WAIT_START_HIGH8_OFFSET)),
-
-            ((self.tick_wait_start & ConfigFrameMasks.TICK_WAIT_START_LOW7_MASK) << ConfigFrameMasks.TICK_WAIT_START_LOW7_OFFSET) |
-            (self.tick_wait_end << ConfigFrameMasks.TICK_WAIT_END_OFFSET) |
-            (self.snn_en << ConfigFrameMasks.SNN_EN_OFFSET) |
-            (self.target_lcn << ConfigFrameMasks.TARGET_LCN_OFFSET) |
-            ((self.test_chip_addr >> ConfigFrameMasks.TEST_CHIP_ADDR_HIGH3_OFFSET)),
-
-            (self.test_chip_addr &
-             ConfigFrameMasks.TEST_CHIP_ADDR_LOW7_MASK) << ConfigFrameMasks.TEST_CHIP_ADDR_LOW7_OFFSET
-        ]
-
-
-if __name__ == "__main__":
-    payload = ParameterReg(
-        weight_width_type=WeightPrecisionTypes.WEIGHT_WIDTH_1BIT,
-        lcn_type=LCNTypes.LCN_64X,
-        input_width_type=InputWidthTypes.INPUT_WIDTH_1BIT,
-        spike_width_type=SpikeWidthTypes.SPIKE_WIDTH_8BIT,
-        neuron_num=122,
-        pool_max_en=True,
-        tick_wait_start=0x123f,
-        tick_wait_end=0,
-        snn_en=True,
-        target_lcn=0,
-        test_chip_addr=0x123
-    )
+    EAST = Coord(1, 0)
+    SOUTH = Coord(0, 1)
+    WEST = Coord(-1, 0)
+    NORTH = Coord(0, -1)
