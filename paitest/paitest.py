@@ -1,151 +1,316 @@
-from .frames.frame import FrameGen
-from .frames.frame_params import *
-from .cores.cores_utils import GenCoreAddr
+from .frames.frame import Addr2Coord, Coord2Addr, Coord, FrameGen
+from .frames.frame_params import Direction, FrameMasks as FM, FrameSubTypes as FST
 from pathlib import Path
 from typing import List, Union, Literal, Tuple, Optional
 import random
+from .log import logger
 
 
-def GenTestCases(
-    save_dir: Union[str, Path] = ...,
-    direction: Literal[
-        "EAST", "East", "east",
-        "SOUTH", "South", "south",
-        "WEST", "West", "west",
-        "NORTH", "North", "north"] = ...,
-    groups: int = 1,
-    fixed_chip_addr: Optional[Tuple[int, int]] = ...,
-    fixed_core_addr: Optional[Tuple[int, int]] = ...,
-    verbose: bool = True
-) -> None:
-    '''
-        1. save_dir: Where to save the frames file
-        2. direction: Test chip direction relative to the location of the core
-        3. groups: How many groups of configuration-test frames to be generated
-        4. fixed_chip_addr: Fix the chip address, e.g. (1, 1) for fixing the CHIP_ADDR with (1, 1)
-        5. fixed_core_addr: Fix the core address, e.g. (3, 4) for fixing the CORE_ADDR with (3, 4)
-        6. verbose: Display the logs
+__all__ = [
+    "paitest"
+]
 
-        Usages:
-        1. Input configuration frame II
-        2. Input test frame II
-        3. Compare the test output frame II with expected
-    '''
 
-    if isinstance(save_dir, str):
-        frames_dir = Path(save_dir)
-    else:
-        frames_dir = save_dir
+class paitest:
 
-    if not frames_dir.exists():
-        frames_dir.mkdir(parents=True, exist_ok=True)
+    def __init__(self, direction: Literal["EAST", "SOUTH", "WEST", "NORTH"]):
+        self._work_dir: Path
+        self._groups: int = 1
 
-    test_chip_dirc: TestChipDirection = TestChipDirection[direction.upper()]
+        self._verbose: bool = True
+        self._fixed_chip_coord: Coord = Coord(0, 0)
+        self._fixed_core_coord: Coord = Coord(0, 0)
+        self._fixed_core_star_coord: Coord = Coord(0, 0)
+        self._test_chip_coord: Coord
+        self._config_frames: List[int]
+        self._testin_frames: List[int]
+        self._testout_frames: List[int]
 
-    '''Generate 'groups' random core address first'''
-    if groups > 1008:
-        raise ValueError(f"Value of groups is no more than 1008")
-    
-    core_addr_list = GenCoreAddr(groups, fixed_core_addr)
+        self._ensure_direction(direction)
 
-    with open(frames_dir / "config.bin", "wb") as fc, \
-            open(frames_dir / "testin.bin", "wb") as fi, \
-            open(frames_dir / "testout.bin", "wb") as fo:
+    def GetRandomCasesForNCores(self,
+                                N: int,
+                                *,
+                                masked_core_coord: Optional[Coord] = None,
+                                is_param_legal: bool = False,
+                                verbose: bool = True
+                                ) -> None:
+        '''
+            Generate 'N' different parameters for 'N' cores coordinates. N cores coordinates with N parameters randomly.
 
-        for i in range(groups):
-            chip_addr_x, chip_addr_y = 0, 0
-            chip_addr = 0
+            1. save_dir: Where to save the frames file
+            2. direction: Test chip direction relative to the location of the core
+            3. N: How many groups of configuration-test frames to be generated
+            4. masked_core_coord: to avoid generating this core coordinate
+            5. verbose: Display the logs
+        '''
+        self._verbose = verbose
+        self._ensure_groups(N)
 
-            # Need UART configuration when enable random_chip_addr
-            if isinstance(fixed_chip_addr, Tuple):
-                chip_addr_x, chip_addr_y = fixed_chip_addr
-            else:
-                chip_addr_x, chip_addr_y = random.randint(
-                    0, 2**5), random.randint(0, 2**5)
+        test_chip_coord = self._direction.value + self._fixed_core_coord
 
-            chip_addr: int = (chip_addr_x << 5) | chip_addr_y
+        params = self._GetNParameters(N, is_param_legal)
 
-            core_addr = 0
-            core_addr_x, core_addr_y = core_addr_list[i]
-            core_addr: int = (core_addr_list[i][0] << 5) | core_addr_list[i][1]
+        core_coord_list = self._GetNCoresCoord(N, masked_core_coord)
 
-            # Random core* address is not supported
-            core_star_addr_x, core_star_addr_y = 0, 0
-            core_star_addr: int = (core_star_addr_x << 5) | core_star_addr_y
+        self._config_frames = []
+        self._testin_frames = []
+        self._testout_frames = []
 
-            config_frames_group: List[int] = []
-            test_outframe_group: List[int] = []
-
-            test_chip_addr_x, test_chip_addr_y = chip_addr_x + \
-                test_chip_dirc.value[0], chip_addr_y + test_chip_dirc.value[1]
-            test_chip_addr: int = (test_chip_addr_x << 5) | test_chip_addr_y
-
-            weight_width_type = random.choice(list(WeightPrecisionTypes))
-            lcn_type = random.choice(list(LCNTypes))
-            input_width_type = random.choice(list(InputWidthTypes))
-            spike_width_type = random.choice(list(SpikeWidthTypes))
-
-            if input_width_type == InputWidthTypes.INPUT_WIDTH_8BIT:
-                neuron_num = random.randint(0, 4096)
-            else:
-                neuron_num = random.randint(0, 512)
-
-            pool_max_en = random.choice([0, 1])
-            tick_wait_start = random.randint(0, 2**15)
-            tick_wait_end = random.randint(0, 2**15)
-
-            snn_en = random.choice([0, 1])
-            target_lcn = random.randint(0, 2**4)
-
-            config_frames_group, test_outframe_group = FrameGen.GenConfig2FrameGroup(
-                chip_addr,
-                core_addr,
-                core_star_addr,
-                weight_width_type=weight_width_type,
-                lcn_type=lcn_type,
-                input_width_type=input_width_type,
-                spike_width_type=spike_width_type,
-                neuron_num=neuron_num,
-                pool_max_en=pool_max_en,
-                tick_wait_start=tick_wait_start,
-                tick_wait_end=tick_wait_end,
-                snn_en=snn_en,
-                target_lcn=target_lcn,
-                test_chip_addr=test_chip_addr,
-                test_ref_out_included=True
-            )
-
-            if verbose:
-                print(f"----- Configuration frame: {i+1}/{groups} Start -----")
-                print("#1  Chip address:       [0x%02x | 0x%02x]" % (
-                    chip_addr_x, chip_addr_y))
-                print("#2  Core address:       [0x%02x | 0x%02x]" % (
-                    core_addr_x, core_addr_y))
-                print("#3  Core star address:  [0x%02x | 0x%02x]" % (
-                    core_star_addr_x, core_star_addr_y))
-                print("#4  Weight width:       0x%x" % weight_width_type.value)
-                print("#5  LCN:                0x%x" % lcn_type.value)
-                print("#6  Input width:        0x%x" % input_width_type.value)
-                print("#7  Spike width:        0x%x" % spike_width_type.value)
-                print("#8  Neuron num:         %d" % neuron_num)
-                print("#9  Pool max enable:    %s" %
-                      ("True" if target_lcn else "False"))
-                print("#10 Tick wait start:    0x%x" % tick_wait_start)
-                print("#11 Tick wait end:      0x%x" % tick_wait_end)
-                print("#12 SNN enable:         %s" %
-                      ("True" if target_lcn else "False"))
-                print("#13 Target LCN:         0x%x" % target_lcn)
-                print("#14 Test chip addr:     0x%x, %s" %
-                      (test_chip_addr, direction.upper()))
-                print(f"----- Configuration frame: {i+1}/{groups} End -----")
-
-            test_inframe = FrameGen.GenTest2InFrame(
-                chip_addr, core_addr, core_star_addr)
+        for i in range(N):
+            logger.info(f"Generating group #{i+1}/{N}...")
+            core_coord = core_coord_list[i]
+            param = params[i]
 
             for j in range(3):
-                fc.write(config_frames_group[j].to_bytes(
-                    length=8, byteorder="big"))
-                fo.write(test_outframe_group[j].to_bytes(
-                    length=8, byteorder="big"))
+                config_frame = FrameGen.GenConfigFrame(
+                    FST.CONFIG_TYPE2, self._fixed_chip_coord, core_coord, self._fixed_core_star_coord, param[j])
+                self._config_frames.append(config_frame)
+                logger.info("Config frame #%d/3: 0x%x in group #%d/%d" %
+                            (j+1, config_frame, i+1, N))
 
-            fi.write(test_inframe.to_bytes(length=8, byteorder="big"))
+                testout_frame = FrameGen.GenTest2OutFrame(
+                    test_chip_coord, core_coord, self._fixed_core_star_coord, param[j])
+                self._testout_frames.append(testout_frame)
+                logger.info("Test out frame #%d/3: 0x%x in group #%d/%d" %
+                            (j+1, testout_frame, i+1, N))
+
+            testin_frame = FrameGen.GenTest2InFrame(
+                test_chip_coord, core_coord, self._fixed_core_star_coord)
+            self._testin_frames.append(testin_frame)
+            logger.info("Test out frame #1/1: 0x%x in group #%d/%d" %
+                        (testin_frame, i+1, N))
+
+    def Get1CaseForNCores(self,
+                          N: int,
+                          *,
+                          masked_core_coord: Optional[Coord] = None,
+                          is_param_legal: bool = False,
+                          verbose: bool = True
+                          ) -> List[int]:
+        '''
+            Generate one parameter with N random cores coordinates.
+
+            N cores coordinates with the same parameter.
+        '''
+        self._verbose = verbose
+        self._ensure_groups(N)
+
+        test_chip_coord = self._direction.value + self._fixed_core_coord
+
+        param = self._Get1Parameter(is_param_legal)
+
+        core_coord_list = self._GetNCoresCoord(
+            N, masked_coord=masked_core_coord)
+
+        self._config_frames = []
+        self._testin_frames = []
+        self._testout_frames = []
+
+        for i in range(N):
+            logger.info(f"Generating group #{i+1}/{N}...")
+            core_coord = core_coord_list[i]
+
+            for j in range(3):
+                config_frame = FrameGen.GenConfigFrame(
+                    FST.CONFIG_TYPE2, self._fixed_chip_coord, core_coord, self._fixed_core_star_coord, param[j])
+                self._config_frames.append(config_frame)
+                logger.info("Config frame #%d/3: 0x%x in group #%d/%d" %
+                            (j+1, config_frame, i+1, N))
+
+                testout_frame = FrameGen.GenTest2OutFrame(
+                    test_chip_coord, core_coord, self._fixed_core_star_coord, param[j])
+                self._testout_frames.append(testout_frame)
+                logger.info("Test out frame #%d/3: 0x%x in group #%d/%d" %
+                            (j+1, testout_frame, i+1, N))
+
+            testin_frame = FrameGen.GenTest2InFrame(
+                test_chip_coord, core_coord, self._fixed_core_star_coord)
+            self._testin_frames.append(testin_frame)
+            logger.info("Test out frame #1/1: 0x%x in group #%d/%d" %
+                        (testin_frame, i+1, N))
+
+        return self._config_frames
+
+    def _Get1CoreCoord(self, masked_coord: Optional[Coord]) -> Coord:
+        '''
+            Generate a random core coordinate. Indicate the masked one to avoid generating the same one
+        '''
+        return self._GetNCoresCoord(N=1, masked_coord=masked_coord)[0]
+
+    def _GetNCoresCoord(self,
+                        N: Optional[int],
+                        masked_coord: Optional[Coord]
+                        ) -> List[Coord]:
+        '''
+            Generate 'N' unique cores coordinates. Optional for excluding one masked core address
+        '''
+        def _CoordGenerator():
+            coordinates = set()
+
+            if isinstance(masked_coord, Coord):
+                coordinates.add((masked_coord.x, masked_coord.y))
+
+            while True:
+                x = random.randint(0, FM.GENERAL_CHIP_ADDR_X_MASK)
+                y = random.randint(0, FM.GENERAL_CHIP_ADDR_Y_MASK)
+
+                if (x, y) not in coordinates and Coord(x, y) < Coord(0b11100, 0b11100):
+                    coordinates.add((x, y))
+                    yield Coord(x, y)
+
+        if not isinstance(N, int):
+            N = self._groups
+
+        if isinstance(masked_coord, Tuple):
+            self._ensure_coord(masked_coord)
+
+        if N == 1008 and isinstance(masked_coord, Tuple):
+            N = 1007
+
+        generator = _CoordGenerator()
+        core_addr_list = [next(generator) for _ in range(N)]
+
+        return core_addr_list
+
+    def _Coord2Addr(self, coord: Tuple[int, int]) -> int:
+        _coord_x = coord[0] & FM.GENERAL_CORE_ADDR_X_MASK
+        _coord_y = coord[1] & FM.GENERAL_CORE_ADDR_Y_MASK
+        return (_coord_x << 5) | _coord_y
+
+    def _Addr2Coord(self, addr: int) -> Tuple[int, int]:
+        _addr = addr & FM.GENERAL_CORE_ADDR_MASK
+        return (_addr >> 5, _addr & ((1 << 5) - 1))
+
+    def _Get1Parameter(self,
+                       is_legal: bool = False
+                       ) -> List[int]:
+        '''Generate one group parameter for parameter register'''
+        return self._GetNParameters(1, is_legal)[0]
+
+    def _GetNParameters(self,
+                        N: Optional[int],
+                        is_legal: bool = False,
+                        ) -> List[List[int]]:
+        '''
+            Generate 'N' groups parameter for parameter register.
+
+            is_legal: whether to generate legal parameters for every core
+        '''
+        def _ParamGenerator():
+            test_chip_coord = self._direction.value + self._fixed_core_coord
+
+            while True:
+
+                if is_legal:
+                    # TODO: Do legal generation here, including direction config
+                    param = [0, 0, 0]
+                    pass
+                else:
+                    param = FrameGen.GenConfigGroup(
+                        FST.CONFIG_TYPE2, self._fixed_chip_coord, self._fixed_core_coord,
+                        self._fixed_core_star_coord, test_chip_coord)
+
+                yield param
+
+        if not isinstance(N, int):
+            N = self._groups
+
+        generator = _ParamGenerator()
+        parameters = [next(generator) for _ in range(N)]
+
+        return parameters
+
+    def _ReplaceCoreCoordOf1Frame(self, frame: int, core_coord: Tuple[int, int]) -> int:
+        '''Replace the original core coordinate of a frame with a new one.'''
+        mask = FM.GENERAL_MASK & \
+            (~(FM.GENERAL_CORE_ADDR_MASK << FM.GENERAL_CORE_ADDR_OFFSET))
+
+        core_addr = self._Coord2Addr(core_coord)
+
+        return (frame & mask) | (core_addr << FM.GENERAL_CORE_ADDR_OFFSET)
+
+    def _ReplaceCoreCoordOfNFrames(self,
+                                   frames: List[int],
+                                   is_random: bool = False,
+                                   core_coord: Optional[Coord] = None,
+                                   ) -> List[int]:
+        '''
+            Replace the core coordinate of frames with a specific or random one.
+
+            Indicate the core coordinate to specify it. Keep the parameters still.
+        '''
+        sample_frame = frames[0]
+        assert len(frames) > 1
+
+        # Get the old core coordinate
+        if is_random:
+            old_core_addr = (
+                sample_frame >> FM.GENERAL_CORE_ADDR_OFFSET) & FM.GENERAL_CORE_ADDR_MASK
+            old_core_coord = Addr2Coord(old_core_addr)
+            self._fixed_core_coord = self._Get1CoreCoord(
+                masked_coord=old_core_coord)
+
+        elif isinstance(core_coord, Tuple):
+            self._ensure_coord(core_coord)
+
+        else:
+            raise ValueError(
+                "Please specify the core coordinate when 'is_random' is False")
+
+        mask = FM.GENERAL_MASK & \
+            (~(FM.GENERAL_CORE_ADDR_MASK << FM.GENERAL_CORE_ADDR_OFFSET))
+
+        fixed_core_addr = Coord2Addr(self._fixed_core_coord)
+
+        for frame in frames:
+            frame = (frame & mask) | (
+                fixed_core_addr << FM.GENERAL_CORE_ADDR_OFFSET)
+
+        return frames
+
+    def _ReplaceHeader(self, frame: int, header: FST) -> int:
+        '''Replace the header of a frame with the new one.'''
+        mask = FM.GENERAL_MASK & \
+            (~(FM.GENERAL_HEADER_MASK << FM.GENERAL_HEADER_OFFSET))
+
+        return (frame & mask) | (header.value << FM.GENERAL_HEADER_OFFSET)
+
+    def _ensure_dir(self, user_dir: Union[str, Path]) -> None:
+        path_dir: Path = Path(user_dir) if isinstance(
+            user_dir, str) else user_dir
+
+        if not path_dir.exists():
+            logger.warning(f"Creating directory {path_dir}...")
+            path_dir.mkdir(parents=True, exist_ok=True)
+
+        self._work_dir = path_dir
+
+    def _ensure_groups(self, groups: int) -> None:
+        if groups > 1024 - 16:
+            raise ValueError("Value of groups is no more than 1008")
+
+        self._groups = groups
+
+        logger.info(f"{groups} groups cases will be generated...")
+
+    def _ensure_direction(self, direction: Literal["EAST", "SOUTH", "WEST", "NORTH"]) -> None:
+        try:
+            self._direction = Direction[direction.upper()]
+        except:
+            raise ValueError("Value of direction is wrong!")
+
+    def _ensure_coord(self, coord: Tuple[int, int]) -> None:
+        if coord[0] > 0b11100 and coord[1] > 0b11100:
+            raise ValueError("Address coordinate must: x < 28 or y < 28")
+    #     with open(frames_dir / "config.bin", "wb") as fc, \
+    #             open(frames_dir / "testin.bin", "wb") as fi, \
+    #             open(frames_dir / "testout.bin", "wb") as fo:
+
+    #             for j in range(3):
+    #                 fc.write(config_frames_group[j].to_bytes(
+    #                     length=8, byteorder="big"))
+    #                 fo.write(test_outframe_group[j].to_bytes(
+    #                     length=8, byteorder="big"))
+
+    #             fi.write(test_inframe.to_bytes(length=8, byteorder="big"))
