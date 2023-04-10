@@ -24,7 +24,7 @@ class FrameSubTypes(Flag):
     CONFIG_TYPE2 = 0b0001
     CONFIG_TYPE3 = 0b0010
     CONFIG_TYPE4 = 0b0011
-    
+
     '''Sub-types of Test Frames'''
     TEST_TYPE1 = 0b0100
     TEST_TYPE2 = 0b0101
@@ -116,9 +116,9 @@ class FrameMasks:
 @dataclass
 class ConfigFrameMasks(FrameMasks):
     '''Specific for Conguration Frame Type II'''
-    
+
     '''General'''
-    TOTAL_RANDOM_BITS = 57
+    TOTAL_BITS = 57
 
     '''Frame #1'''
     WEIGHT_WIDTH_OFFSET = 28
@@ -198,24 +198,24 @@ class SpikeWidthTypes(Enum):
     '''Format of Output Spike'''
     SPIKE_WIDTH_1BIT = 0
     SPIKE_WIDTH_8BIT = 1
-    
+
 
 class Coord:
-    
+
     def __init__(self, x, y):
         assert -31 < x < 32
         assert -31 < y < 32
         self.x, self.y = x, y
-        
+
     def __add__(self, other):
         return Coord(self.x + other.x, self.y + other.y)
- 
+
     def __sub__(self, other):
         return Coord(self.x - other.x, self.y - other.y)
-    
+
     def __eq__(self, other) -> bool:
         return self.x == other.x and self.y == other.y
-    
+
     def __lt__(self, other) -> bool:
         '''Whether on the left or below'''
         return not (self.x > other.x and self.y > other.y)
@@ -224,11 +224,11 @@ class Coord:
         '''Whether on the right and above'''
         return (self.x > other.x and self.y > other.y) or \
             (self.x == other.x and self.y > other.y) or \
-                (self.x > other.x and self.y == other.y)
-    
+            (self.x > other.x and self.y == other.y)
+
     def __str__(self) -> str:
         return f"{self.x}, {self.y}"
-    
+
     __repr__ = __str__
 
 

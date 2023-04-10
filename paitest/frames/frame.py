@@ -1,23 +1,34 @@
-from .frame_params import FrameConfigTypes as FCT, \
-    FrameTestTypes as FTT, FrameWorkTypes as FWT, \
-    FrameMasks as FM
+from .frame_params import FrameTypes, FrameSubTypes as FST, FrameMasks as FM, ConfigFrameMasks as CFM
 from .frame_params import *
-from typing import List, Tuple, Union, TypeVar
+from typing import List, Tuple, Union, Dict, Optional
+import random
 
-SUB_TYPES = TypeVar('SUB_TYPES', FCT, FTT, FWT)
-T = TypeVar('T')
-R = TypeVar('R')
+
+__all__ = [
+    "Addr2Coord",
+    "Coord2Addr",
+    "FrameGen",
+    "FrameDecoder"
+]
+
+
+def Addr2Coord(addr: int) -> Coord:
+    return Coord(addr >> 5, addr & ((1 << 5) - 1))
+
+
+def Coord2Addr(coord: Coord) -> int:
+    return (coord.x << 5) | coord.y
 
 
 class FrameGen:
 
     @staticmethod
-    def GenFrame(header: int,
-                 chip_addr: int,
-                 core_addr: int,
-                 core_star_addr: int,
-                 payload: int
-                 ) -> int:
+    def _GenFrame(header: int,
+                  chip_addr: int,
+                  core_addr: int,
+                  core_star_addr: int,
+                  payload: int
+                  ) -> int:
         header = header & FM.GENERAL_HEADER_MASK
         chip_addr = chip_addr & FM.GENERAL_CHIP_ADDR_MASK
         core_addr = core_addr & FM.GENERAL_CORE_ADDR_MASK
@@ -31,144 +42,305 @@ class FrameGen:
             (payload << FM.GENERAL_PAYLOAD_OFFSET)
 
     @staticmethod
-    def GenConfig2FrameGroup(
-        chip_addr: int = 0,
-        core_addr: int = 0,
-        core_star_addr: int = 0,
-        weight_width_type: WeightPrecisionTypes = ...,
-        lcn_type: LCNTypes = ...,
-        input_width_type: InputWidthTypes = ...,
-        spike_width_type: SpikeWidthTypes = ...,
-        neuron_num: int = ...,
-        pool_max_en: bool = ...,
-        tick_wait_start: int = ...,
-        tick_wait_end: int = ...,
-        snn_en: bool = ...,
-        target_lcn: int = ...,
-        test_chip_addr: int = ...,
-        test_ref_out_included: bool = ...
-    ) -> Union[List[int], Tuple[List[int], List[int]]]:
-
-        payload_list: List[int] = []
-        frames: List[int] = []
-        ref_out_frames: List[int] = []
-
-        pr = ParameterReg(
-            weight_width_type=weight_width_type,
-            lcn_type=lcn_type,
-            input_width_type=input_width_type,
-            spike_width_type=spike_width_type,
-            neuron_num=neuron_num,
-            pool_max_en=pool_max_en,
-            tick_wait_start=tick_wait_start,
-            tick_wait_end=tick_wait_end,
-            snn_en=snn_en,
-            target_lcn=target_lcn,
-            test_chip_addr=test_chip_addr
-        )
-        payload_list = pr.GetPayloadList()
-
-        for p in payload_list:
-            frames.append(FrameGen.GenConfigFrame(FCT.CONFIG_TYPE2,
-                                                  chip_addr, core_addr, core_star_addr, p))
-
-            if test_ref_out_included:
-                ref_out_frames.append(
-                    FrameGen.GenTest2OutFrame(
-                        test_chip_addr, core_addr, core_star_addr, p)
-                )
-
-        if test_ref_out_included:
-            return frames, ref_out_frames
-
-        return frames
-
-    @staticmethod
-    def GenConfigFrame(header: FCT,
-                       chip_addr: int,
-                       core_addr: int,
-                       core_star_addr: int,
+    def GenConfigFrame(header: FST,
+                       chip_coord: Coord,
+                       core_coord: Coord,
+                       core_star_coord: Coord,
                        payload: int
                        ) -> int:
-        return FrameGen.GenFrame(header.value, chip_addr, core_addr, core_star_addr, payload)
+
+        chip_addr = Coord2Addr(chip_coord)
+        core_addr = Coord2Addr(core_coord)
+        core_star_addr = Coord2Addr(core_star_coord)
+
+        return FrameGen._GenFrame(header.value, chip_addr, core_addr, core_star_addr, payload)
+
+    @staticmethod
+    def GenConfigGroup(header: FST,
+                       chip_coord: Coord,
+                       core_coord: Coord,
+                       core_star_coord: Coord,
+                       test_chip_coord: Coord
+                       ) -> List[int]:
+
+        ConfigFrameGroup: List[int] = []
+
+        param_reg = FrameGen._GenParamReg(test_chip_coord)
+
+        for i in range(3):
+            ConfigFrameGroup.append(
+                FrameGen.GenConfigFrame(header, chip_coord, core_coord, core_star_coord, param_reg[i]))
+
+        return ConfigFrameGroup
+
+    @staticmethod
+    def _GenParamReg(test_chip_coord: Coord,
+                     is_random: bool = True,
+                     is_legal: bool = False,
+                     *,
+                     weight_width_type: Optional[WeightPrecisionTypes] = None,
+                     lcn_type: Optional[LCNTypes] = None,
+                     input_width_type: Optional[InputWidthTypes] = None,
+                     spike_width_type: Optional[SpikeWidthTypes] = None,
+                     neuron_num: Optional[int] = None,
+                     pool_max_en: Optional[bool] = None,
+                     tick_wait_start: Optional[int] = None,
+                     tick_wait_end: Optional[int] = None,
+                     snn_en: Optional[bool] = None,
+                     target_lcn: Optional[int] = None,
+                     ) -> List[int]:
+
+        test_chip_addr = Coord2Addr(test_chip_coord)
+        test_chip_addr_high3 = \
+            (test_chip_addr >>
+             CFM.TEST_CHIP_ADDR_COMBINATION_OFFSET) & CFM.TEST_CHIP_ADDR_HIGH3_MASK
+        test_chip_addr_low7 = test_chip_addr & CFM.TEST_CHIP_ADDR_LOW7_MASK
+
+        param_reg: List[int] = []
+
+        if is_random:
+            if not is_legal:
+                for i in range(2):
+                    param_reg.append(random.randint(
+                        0, FM.GENERAL_PAYLOAD_MASK))
+
+                param_reg[1] = (param_reg[1] & (
+                    ~CFM.TEST_CHIP_ADDR_HIGH3_MASK)) | test_chip_addr_high3
+                param_reg.append(test_chip_addr_low7 <<
+                                 CFM.TEST_CHIP_ADDR_LOW7_OFFSET)
+            else:
+                # Do legal geenration
+                pass
+        else:
+            pass
+
+        return param_reg
 
     '''Functions of Test Frames Generation'''
     @staticmethod
-    def GenTestFrame(header: FTT,
-                     chip_addr: int,
-                     core_addr: int,
-                     core_star_addr: int,
-                     payload: int = 0
-                     ) -> int:
-        return FrameGen.GenFrame(header.value, chip_addr, core_addr, core_star_addr, payload)
+    def _GenTestFrame(header: FST,
+                      chip_coord: Coord,
+                      core_coord: Coord,
+                      core_star_coord: Coord,
+                      payload: int = 0
+                      ) -> int:
+
+        chip_addr = Coord2Addr(chip_coord)
+        core_addr = Coord2Addr(core_coord)
+        core_star_addr = Coord2Addr(core_star_coord)
+
+        return FrameGen._GenFrame(header.value, chip_addr, core_addr, core_star_addr, payload)
 
     @staticmethod
-    def GenTest1InFrame(
-        chip_addr: int = 0,
-        core_addr: int = 0,
-        core_star_addr: int = 0
-    ) -> int:
-        return FrameGen.GenTestFrame(FTT.TEST_TYPE1, chip_addr, core_addr, core_star_addr)
+    def GenTest1InFrame(chip_coord: Coord,
+                        core_coord: Coord,
+                        core_star_coord: Coord
+                        ) -> int:
+        return FrameGen._GenTestFrame(FST.TEST_TYPE1, chip_coord, core_coord, core_star_coord)
 
     @staticmethod
-    def GenTest1OutFrame(
-        test_chip_addr: int = ...,
-        core_addr: int = 0,
-        core_star_addr: int = 0,
-        random_seed: int = ...
-    ) -> int:
-        return FrameGen.GenTestFrame(FTT.TEST_TYPE1, test_chip_addr, core_addr, core_star_addr, random_seed)
+    def GenTest1OutFrame(test_chip_coord: Coord,
+                         core_coord: Coord,
+                         core_star_coord: Coord,
+                         random_seed: int
+                         ) -> int:
+        return FrameGen._GenTestFrame(FST.TEST_TYPE1, test_chip_coord, core_coord, core_star_coord, random_seed)
 
     @staticmethod
-    def GenTest2InFrame(
-        chip_addr: int = 0,
-        core_addr: int = 0,
-        core_star_addr: int = 0
-    ) -> int:
-        return FrameGen.GenTestFrame(FTT.TEST_TYPE2, chip_addr, core_addr, core_star_addr)
+    def GenTest2InFrame(chip_coord: Coord,
+                        core_coord: Coord,
+                        core_star_coord: Coord
+                        ) -> int:
+        return FrameGen._GenTestFrame(FST.TEST_TYPE2, chip_coord, core_coord, core_star_coord)
 
     @staticmethod
-    def GenTest2OutFrame(
-        test_chip_addr: int = ...,
-        core_addr: int = 0,
-        core_star_addr: int = 0,
-        reg_parameters: int = ...
-    ) -> int:
-        return FrameGen.GenTestFrame(FTT.TEST_TYPE2, test_chip_addr, core_addr, core_star_addr, reg_parameters)
-
-    @staticmethod
-    def GenTest3InFrame(
-        chip_addr: int = 0,
-        core_addr: int = 0,
-        core_star_addr: int = 0,
-        package_info: int = ...
-    ) -> int:
-        return FrameGen.GenTestFrame(FTT.TEST_TYPE3, chip_addr, core_addr, core_star_addr, package_info)
-
-    @staticmethod
-    def GenTest3OutFrame(
-        test_chip_addr: int = ...,
-        core_addr: int = 0,
-        core_star_addr: int = 0
-    ) -> None:
-        pass
-
-    @staticmethod
-    def GenTest4InFrame(
-        chip_addr: int = 0,
-        core_addr: int = 0,
-        core_star_addr: int = 0,
-        package_info: int = ...
-    ) -> int:
-        return FrameGen.GenTestFrame(FTT.TEST_TYPE4, chip_addr, core_addr, core_star_addr, package_info)
+    def GenTest2OutFrame(test_chip_coord: Coord,
+                         core_coord: Coord,
+                         core_star_coord: Coord,
+                         param_reg: int
+                         ) -> int:
+        return FrameGen._GenTestFrame(FST.TEST_TYPE2, test_chip_coord, core_coord, core_star_coord, param_reg)
 
 
-class FrameUtils:
+class FrameDecoder:
 
-    @staticmethod
-    def isFrame(frame: bytes, frame_type: FrameTypes) -> bool:
-        return frame_type.value == frame[0] >> 4
+    def __init__(self, frames: Union[List[int], Tuple[int, ...]]):
 
-    @staticmethod
-    def isSubFrame(frame: bytes, frame_subtype: SUB_TYPES) -> bool:
-        return frame_subtype.value == frame[0] >> 4
+        self._len = len(frames)
+        self._frame = frames[0]
+        self._frames_group = tuple(frames)
+
+        '''For type II'''
+        self._param_reg_dict: Dict[str, Union[int, bool]] = {
+            "weight_width": 0,
+            "LCN": 0,
+            "input_width": 0,
+            "spike_width": 0,
+            "neuron_num": 0,
+            "pool_max": True,
+            "tick_wait_start": 0,
+            "tick_wait_end": 0,
+            "SNN_EN": 0,
+            "target_LCN": 0,
+            "test_chip_addr": 0
+        }
+
+        self._decode()
+
+    @property
+    def subtype(self) -> FST:
+        _header: int = (
+            self._frame >> FM.GENERAL_HEADER_OFFSET) & FM.GENERAL_HEADER_MASK
+        try:
+            _type = FrameSubTypes(_header)
+            return _type
+        except:
+            raise ValueError(f"Frame header {_header} is illigal!")
+
+    @property
+    def type(self) -> FrameTypes:
+        subtype_v = self.subtype.value
+
+        if subtype_v < 0b0100:
+            return FrameTypes.FRAME_CONFIG
+        elif subtype_v < 0b1000:
+            return FrameTypes.FRAME_TEST
+        elif subtype_v < 0b1100:
+            return FrameTypes.FRAME_WORK
+
+        return FrameTypes.FRAME_UNKNOWN
+
+    @property
+    def chip_coord(self) -> Coord:
+        _chip_addr: int = (
+            self._frame >> FM.GENERAL_CHIP_ADDR_OFFSET) & FM.GENERAL_CHIP_ADDR_MASK
+        return Addr2Coord(_chip_addr)
+
+    @property
+    def core_coord(self) -> Coord:
+        _core_addr: int = (
+            self._frame >> FM.GENERAL_CORE_ADDR_OFFSET) & FM.GENERAL_CORE_ADDR_MASK
+        return Addr2Coord(_core_addr)
+
+    @property
+    def core_star_coord(self) -> Coord:
+        _core_star_addr: int = (
+            self._frame >> FM.GENERAL_CORE_STAR_ADDR_OFFSET) & FM.GENERAL_CORE_STAR_ADDR_MASK
+        return Addr2Coord(_core_star_addr)
+
+    @property
+    def payload(self) -> Union[List[int], int]:
+        if self._len == 1:
+            return (self._frame >> FM.GENERAL_PAYLOAD_OFFSET) & FM.GENERAL_PAYLOAD_MASK
+
+        _payload: List[int] = []
+
+        for i in range(self._len):
+            _payload.append(
+                (self._frames_group[i] >> FM.GENERAL_PAYLOAD_OFFSET) & FM.GENERAL_PAYLOAD_MASK)
+
+        return _payload
+
+    @property
+    def param_reg(self) -> Dict[str, Union[int, bool]]:
+        return self._param_reg_dict
+
+    def _decode(self) -> None:
+        self._param_reg_parse()
+
+    def info(self) -> None:
+        self._general_info()
+
+        if self.type == FrameTypes.FRAME_CONFIG:
+            return self._config_info()
+        else:
+            raise NotImplementedError
+
+    def _general_info(self) -> None:
+        print("General info of frame: 0x%x" % self._frame)
+        print("#1  Frame type:         %s" % self.subtype)
+        print("#2  Chip address:       [0x%02x | 0x%02x]" % (
+            self.chip_coord.x, self.chip_coord.y))
+        print("#3  Core address:       [0x%02x | 0x%02x]" % (
+            self.core_coord.x, self.core_coord.y))
+        print("#4  Core* address:      [0x%02x | 0x%02x]" %
+              (self.core_star_coord.x, self.core_star_coord.y))
+
+    def _config_info(self) -> None:
+        if self.subtype == FST.CONFIG_TYPE2:
+            print("Info of parameter registers")
+            print("#1  Weight width:       0x%x" %
+                  self._param_reg_dict["weight_width"])
+            print("#2  LCN:                0x%x" % self._param_reg_dict["LCN"])
+            print("#3  Input width:        0x%x" %
+                  self._param_reg_dict["input_width"])
+            print("#4  Spike width:        0x%x" %
+                  self._param_reg_dict["spike_width"])
+            print("#5  Neuron num:         %d" %
+                  self._param_reg_dict["neuron_num"])
+            print("#6  Pool max enable:    %d" %
+                  self._param_reg_dict["pool_max"])
+            print("#7  Tick wait start:    0x%x" %
+                  self._param_reg_dict["tick_wait_start"])
+            print("#8  Tick wait end:      0x%x" %
+                  self._param_reg_dict["tick_wait_end"])
+            print("#9  SNN enable:         %d" %
+                  self._param_reg_dict["SNN_EN"])
+            print("#10 Target LCN:         0x%x" %
+                  self._param_reg_dict["target_LCN"])
+            print("#11 Test chip addr:     0x%x" %
+                  self._param_reg_dict["test_chip_addr"])
+        else:
+            raise NotImplementedError
+
+    def _test_info(self) -> None:
+        if self.subtype == FST.TEST_TYPE2:
+            pass
+        else:
+            raise NotImplementedError
+
+    def _param_reg_parse(self) -> None:
+        self._param_reg_dict["weight_width"] = (
+            self._frames_group[0] >> CFM.WEIGHT_WIDTH_OFFSET) & CFM.WEIGHT_WIDTH_MASK
+        self._param_reg_dict["LCN"] = (
+            self._frames_group[0] >> CFM.LCN_OFFSET) & CFM.LCN_MASK
+        self._param_reg_dict["input_width"] = (
+            self._frames_group[0] >> CFM.INPUT_WIDTH_OFFSET) & CFM.INPUT_WIDTH_MASK
+        self._param_reg_dict["spike_width"] = (
+            self._frames_group[0] >> CFM.SPIKE_WIDTH_OFFSET) & CFM.SPIKE_WIDTH_MASK
+        self._param_reg_dict["neuron_num"] = (
+            self._frames_group[0] >> CFM.NEURON_NUM_OFFSET) & CFM.NEURON_NUM_MASK
+        self._param_reg_dict["pool_max"] = (
+            self._frames_group[0] >> CFM.POOL_MAX_OFFSET) & CFM.POOL_MAX_MASK
+
+        tick_wait_high8 = (
+            self._frames_group[0] >> CFM.TICK_WAIT_START_HIGH8_OFFSET) & CFM.TICK_WAIT_START_HIGH8_MASK
+        tick_wait_low7 = (
+            self._frames_group[1] >> CFM.TICK_WAIT_START_LOW7_OFFSET) & CFM.TICK_WAIT_START_LOW7_MASK
+        self._param_reg_dict["tick_wait_start"] = \
+            (tick_wait_high8 << CFM.TICK_WAIT_START_COMBINATION_OFFSET) | tick_wait_low7
+
+        self._param_reg_dict["tick_wait_end"] = (
+            self._frames_group[1] >> CFM.TICK_WAIT_END_OFFSET) & CFM.TICK_WAIT_END_MASK
+        self._param_reg_dict["SNN_EN"] = (
+            self._frames_group[1] >> CFM.SNN_EN_OFFSET) & CFM.SNN_EN_MASK
+        self._param_reg_dict["target_LCN"] = (
+            self._frames_group[1] >> CFM.TARGET_LCN_OFFSET) & CFM.TARGET_LCN_MASK
+
+        test_chip_addr_high3 = (
+            self._frames_group[1] >> CFM.TEST_CHIP_ADDR_HIGH3_OFFSET) & CFM.TEST_CHIP_ADDR_HIGH3_MASK
+        test_chip_addr_low7 = (
+            self._frames_group[2] >> CFM.TEST_CHIP_ADDR_LOW7_OFFSET) & CFM.TEST_CHIP_ADDR_LOW7_MASK
+        self._param_reg_dict["test_chip_addr"] = \
+            (test_chip_addr_high3 <<
+             CFM.TEST_CHIP_ADDR_COMBINATION_OFFSET) | test_chip_addr_low7
+
+    def _test_chip_direction(self) -> Direction:
+        test_chip_coord = Addr2Coord(self._param_reg_dict["test_chip_addr"])
+        offset = test_chip_coord - self.chip_coord
+
+        try:
+            direction = Direction(offset)
+            return direction
+        except:
+            raise ValueError
