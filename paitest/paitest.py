@@ -14,14 +14,17 @@ __all__ = [
 
 class paitest:
 
-    def __init__(self, direction: Literal["EAST", "SOUTH", "WEST", "NORTH"]):
+    def __init__(self,
+                 direction: Literal["EAST", "SOUTH", "WEST", "NORTH"],
+                 core_coord: Tuple[int, int] = (0, 0)
+                 ) -> None:
         self._error_code = 0
         self._work_dir: Path
         self._groups: int = 1
 
         self._verbose: bool = True
         self._fixed_chip_coord: Coord = Coord(0, 0)
-        self._fixed_core_coord: Coord
+        self._fixed_core_coord: Coord = Coord(core_coord)
         self._fixed_core_star_coord: Coord = Coord(0, 0)
         self._test_chip_coord: Coord
         self._config_f: io.BytesIO
@@ -89,7 +92,7 @@ class paitest:
                     test_chip_coord, core_coord, self._fixed_core_star_coord)
 
                 fi.write(testin_frame.to_bytes(length=8, byteorder="big"))
-                logger.info("Test out frame #1/1: 0x%x in group #%d/%d" %
+                logger.info("Test in frame #1/1: 0x%x in group #%d/%d" %
                             (testin_frame, i+1, N))
 
     def Get1CaseForNCores(self,
@@ -125,7 +128,7 @@ class paitest:
 
         with open(self._work_dir / "config.bin", "wb") as fc, \
             open(self._work_dir / "testin.bin", "wb") as fi, \
-            open(self._work_dir / "testin.bin", "wb") as fo:
+            open(self._work_dir / "testout.bin", "wb") as fo:
 
             for i in range(N):
                 logger.info(f"Generating group #{i+1}/{N}...")
@@ -150,7 +153,7 @@ class paitest:
                     test_chip_coord, core_coord, self._fixed_core_star_coord)
 
                 fi.write(testin_frame.to_bytes(length=8, byteorder="big"))
-                logger.info("Test out frame #1/1: 0x%x in group #%d/%d" %
+                logger.info("Test in frame #1/1: 0x%x in group #%d/%d" %
                             (testin_frame, i+1, N))
 
         return self._config_frames
@@ -322,4 +325,6 @@ class paitest:
 
     def _ensure_coord(self, coord: Coord) -> None:
         if coord >= Coord(0b11100, 0b11100):
-            raise ValueError("Address coordinate must: x < 28 or y < 28")
+            raise ValueError("Address coordinate must: 0 <= x < 28 or 0 <= y < 28")
+        
+        self._fixed_core_coord = coord

@@ -1,10 +1,13 @@
-from typing import Literal, List, Optional, Union
+from typing import Literal, Tuple, List, Optional, Union
 from pathlib import Path
 import io
 from .frames.frame import Coord
 
 class paitest:
-    def __init__(self, direction: Literal["EAST", "SOUTH", "WEST", "NORTH"]): ...
+    def __init__(self,
+                 direction: Literal["EAST", "SOUTH", "WEST", "NORTH"],
+                 core_coord: Tuple[int, int] = (0, 0)
+                 ) -> None: ...
 
     def GetRandomCasesForNCores(self,
                                 N: int,
