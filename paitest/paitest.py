@@ -1,8 +1,9 @@
 from .frames.frame import Addr2Coord, Coord2Addr, Coord, FrameGen
-from .frames.frame_params import Direction, FrameMasks as FM, FrameSubTypes as FST
+from .frames.frame_params import Direction, FrameMask as FM, FrameSubType as FST
 from pathlib import Path
 from typing import List, Union, Literal, Tuple, Optional
 import random
+import io
 from .log import logger
 
 
@@ -14,23 +15,28 @@ __all__ = [
 class paitest:
 
     def __init__(self, direction: Literal["EAST", "SOUTH", "WEST", "NORTH"]):
+        self._error_code = 0
         self._work_dir: Path
         self._groups: int = 1
 
         self._verbose: bool = True
         self._fixed_chip_coord: Coord = Coord(0, 0)
-        self._fixed_core_coord: Coord = Coord(0, 0)
+        self._fixed_core_coord: Coord
         self._fixed_core_star_coord: Coord = Coord(0, 0)
         self._test_chip_coord: Coord
-        self._config_frames: List[int]
-        self._testin_frames: List[int]
-        self._testout_frames: List[int]
+        self._config_f: io.BytesIO
+        self._testin_f: io.BytesIO
+        self._testout_f: io.BytesIO
 
         self._ensure_direction(direction)
 
     def GetRandomCasesForNCores(self,
                                 N: int,
+                                save_dir: Union[str, Path],
                                 *,
+                                config_f: Optional[io.BytesIO] = None,
+                                testin_f: Optional[io.BytesIO] = None,
+                                testout_f: Optional[io.BytesIO] = None,
                                 masked_core_coord: Optional[Coord] = None,
                                 is_param_legal: bool = False,
                                 verbose: bool = True
@@ -41,49 +47,58 @@ class paitest:
             1. save_dir: Where to save the frames file
             2. direction: Test chip direction relative to the location of the core
             3. N: How many groups of configuration-test frames to be generated
-            4. masked_core_coord: to avoid generating this core coordinate
+            4. masked_core_coord: to avoid genif save_dir:
+            self._ensure_dir(save_dir)erating this core coordinate
             5. verbose: Display the logs
         '''
         self._verbose = verbose
         self._ensure_groups(N)
 
-        test_chip_coord = self._direction.value + self._fixed_core_coord
+        if save_dir:
+            self._ensure_dir(save_dir)
 
+        test_chip_coord: Coord = self._direction.value + self._fixed_core_coord
         params = self._GetNParameters(N, is_param_legal)
-
         core_coord_list = self._GetNCoresCoord(N, masked_core_coord)
 
-        self._config_frames = []
-        self._testin_frames = []
-        self._testout_frames = []
+        with open(self._work_dir / "config.bin", "wb") as fc, \
+            open(self._work_dir / "testin.bin", "wb") as fi, \
+            open(self._work_dir / "testin.bin", "wb") as fo:
 
-        for i in range(N):
-            logger.info(f"Generating group #{i+1}/{N}...")
-            core_coord = core_coord_list[i]
-            param = params[i]
+            for i in range(N):
+                logger.info(f"Generating group #{i+1}/{N}...")
+                core_coord = core_coord_list[i]
+                param = params[i]
 
-            for j in range(3):
-                config_frame = FrameGen.GenConfigFrame(
-                    FST.CONFIG_TYPE2, self._fixed_chip_coord, core_coord, self._fixed_core_star_coord, param[j])
-                self._config_frames.append(config_frame)
-                logger.info("Config frame #%d/3: 0x%x in group #%d/%d" %
-                            (j+1, config_frame, i+1, N))
+                for j in range(3):
+                    config_frame = FrameGen.GenConfigFrame(
+                        FST.CONFIG_TYPE2, self._fixed_chip_coord, core_coord, self._fixed_core_star_coord, param[j])
 
-                testout_frame = FrameGen.GenTest2OutFrame(
-                    test_chip_coord, core_coord, self._fixed_core_star_coord, param[j])
-                self._testout_frames.append(testout_frame)
-                logger.info("Test out frame #%d/3: 0x%x in group #%d/%d" %
-                            (j+1, testout_frame, i+1, N))
+                    fc.write(config_frame.to_bytes(length=8, byteorder="big"))
+                    logger.info("Config frame #%d/3: 0x%x in group #%d/%d" %
+                                (j+1, config_frame, i+1, N))
 
-            testin_frame = FrameGen.GenTest2InFrame(
-                test_chip_coord, core_coord, self._fixed_core_star_coord)
-            self._testin_frames.append(testin_frame)
-            logger.info("Test out frame #1/1: 0x%x in group #%d/%d" %
-                        (testin_frame, i+1, N))
+                    testout_frame = FrameGen.GenTest2OutFrame(
+                        test_chip_coord, core_coord, self._fixed_core_star_coord, param[j])
+
+                    fo.write(testout_frame.to_bytes(length=8, byteorder="big"))
+                    logger.info("Test out frame #%d/3: 0x%x in group #%d/%d" %
+                                (j+1, testout_frame, i+1, N))
+
+                testin_frame = FrameGen.GenTest2InFrame(
+                    test_chip_coord, core_coord, self._fixed_core_star_coord)
+
+                fi.write(testin_frame.to_bytes(length=8, byteorder="big"))
+                logger.info("Test out frame #1/1: 0x%x in group #%d/%d" %
+                            (testin_frame, i+1, N))
 
     def Get1CaseForNCores(self,
                           N: int,
+                          save_dir: Union[str, Path],
                           *,
+                          config_f: Optional[io.BytesIO] = None,
+                          testin_f: Optional[io.BytesIO] = None,
+                          testout_f: Optional[io.BytesIO] = None,
                           masked_core_coord: Optional[Coord] = None,
                           is_param_legal: bool = False,
                           verbose: bool = True
@@ -96,10 +111,11 @@ class paitest:
         self._verbose = verbose
         self._ensure_groups(N)
 
+        if save_dir:
+            self._ensure_dir(save_dir)
+
         test_chip_coord = self._direction.value + self._fixed_core_coord
-
         param = self._Get1Parameter(is_param_legal)
-
         core_coord_list = self._GetNCoresCoord(
             N, masked_coord=masked_core_coord)
 
@@ -107,28 +123,35 @@ class paitest:
         self._testin_frames = []
         self._testout_frames = []
 
-        for i in range(N):
-            logger.info(f"Generating group #{i+1}/{N}...")
-            core_coord = core_coord_list[i]
+        with open(self._work_dir / "config.bin", "wb") as fc, \
+            open(self._work_dir / "testin.bin", "wb") as fi, \
+            open(self._work_dir / "testin.bin", "wb") as fo:
 
-            for j in range(3):
-                config_frame = FrameGen.GenConfigFrame(
-                    FST.CONFIG_TYPE2, self._fixed_chip_coord, core_coord, self._fixed_core_star_coord, param[j])
-                self._config_frames.append(config_frame)
-                logger.info("Config frame #%d/3: 0x%x in group #%d/%d" %
-                            (j+1, config_frame, i+1, N))
+            for i in range(N):
+                logger.info(f"Generating group #{i+1}/{N}...")
+                core_coord = core_coord_list[i]
 
-                testout_frame = FrameGen.GenTest2OutFrame(
-                    test_chip_coord, core_coord, self._fixed_core_star_coord, param[j])
-                self._testout_frames.append(testout_frame)
-                logger.info("Test out frame #%d/3: 0x%x in group #%d/%d" %
-                            (j+1, testout_frame, i+1, N))
+                for j in range(3):
+                    config_frame = FrameGen.GenConfigFrame(
+                        FST.CONFIG_TYPE2, self._fixed_chip_coord, core_coord, self._fixed_core_star_coord, param[j])
 
-            testin_frame = FrameGen.GenTest2InFrame(
-                test_chip_coord, core_coord, self._fixed_core_star_coord)
-            self._testin_frames.append(testin_frame)
-            logger.info("Test out frame #1/1: 0x%x in group #%d/%d" %
-                        (testin_frame, i+1, N))
+                    fc.write(config_frame.to_bytes(length=8, byteorder="big"))
+                    logger.info("Config frame #%d/3: 0x%x in group #%d/%d" %
+                                (j+1, config_frame, i+1, N))
+
+                    testout_frame = FrameGen.GenTest2OutFrame(
+                        test_chip_coord, core_coord, self._fixed_core_star_coord, param[j])
+
+                    fo.write(testout_frame.to_bytes(length=8, byteorder="big"))
+                    logger.info("Test out frame #%d/3: 0x%x in group #%d/%d" %
+                                (j+1, testout_frame, i+1, N))
+
+                testin_frame = FrameGen.GenTest2InFrame(
+                    test_chip_coord, core_coord, self._fixed_core_star_coord)
+
+                fi.write(testin_frame.to_bytes(length=8, byteorder="big"))
+                logger.info("Test out frame #1/1: 0x%x in group #%d/%d" %
+                            (testin_frame, i+1, N))
 
         return self._config_frames
 
@@ -198,7 +221,7 @@ class paitest:
             is_legal: whether to generate legal parameters for every core
         '''
         def _ParamGenerator():
-            test_chip_coord = self._direction.value + self._fixed_core_coord
+            test_chip_coord: Coord = self._direction.value + self._fixed_core_coord
 
             while True:
 
@@ -295,22 +318,8 @@ class paitest:
         logger.info(f"{groups} groups cases will be generated...")
 
     def _ensure_direction(self, direction: Literal["EAST", "SOUTH", "WEST", "NORTH"]) -> None:
-        try:
-            self._direction = Direction[direction.upper()]
-        except:
-            raise ValueError("Value of direction is wrong!")
+        self._direction = Direction[direction.upper()]
 
-    def _ensure_coord(self, coord: Tuple[int, int]) -> None:
-        if coord[0] > 0b11100 and coord[1] > 0b11100:
+    def _ensure_coord(self, coord: Coord) -> None:
+        if coord >= Coord(0b11100, 0b11100):
             raise ValueError("Address coordinate must: x < 28 or y < 28")
-    #     with open(frames_dir / "config.bin", "wb") as fc, \
-    #             open(frames_dir / "testin.bin", "wb") as fi, \
-    #             open(frames_dir / "testout.bin", "wb") as fo:
-
-    #             for j in range(3):
-    #                 fc.write(config_frames_group[j].to_bytes(
-    #                     length=8, byteorder="big"))
-    #                 fo.write(test_outframe_group[j].to_bytes(
-    #                     length=8, byteorder="big"))
-
-    #             fi.write(test_inframe.to_bytes(length=8, byteorder="big"))

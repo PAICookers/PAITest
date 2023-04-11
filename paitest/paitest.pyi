@@ -1,4 +1,6 @@
-from typing import Literal, List, Optional
+from typing import Literal, List, Optional, Union
+from pathlib import Path
+import io
 from .frames.frame import Coord
 
 class paitest:
@@ -6,7 +8,11 @@ class paitest:
 
     def GetRandomCasesForNCores(self,
                                 N: int,
+                                save_dir: Union[str, Path],
                                 *,
+                                config_f: Optional[io.BytesIO] = None,
+                                testin_f: Optional[io.BytesIO] = None,
+                                testout_f: Optional[io.BytesIO] = None,
                                 masked_core_coord: Optional[Coord] = None,
                                 is_param_legal: bool = False,
                                 verbose: bool = True
@@ -14,7 +20,11 @@ class paitest:
     
     def Get1CaseForNCores(self,
                           N: int,
+                          save_dir: Union[str, Path],
                           *,
+                          config_f: Optional[io.BytesIO] = None,
+                          testin_f: Optional[io.BytesIO] = None,
+                          testout_f: Optional[io.BytesIO] = None,
                           masked_core_coord: Optional[Coord] = None,
                           is_param_legal: bool = False,
                           verbose: bool = True
