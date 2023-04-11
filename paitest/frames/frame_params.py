@@ -9,7 +9,7 @@ class CoreType(Enum):
 
 
 @unique
-class FrameTypes(Enum):
+class FrameType(Enum):
     '''Types of Frames'''
     FRAME_CONFIG = 0
     FRAME_TEST = 0x1
@@ -18,7 +18,7 @@ class FrameTypes(Enum):
 
 
 @unique
-class FrameSubTypes(Flag):
+class FrameSubType(Flag):
     '''Sub-types of Configuration Frames'''
     CONFIG_TYPE1 = 0b0000
     CONFIG_TYPE2 = 0b0001
@@ -38,17 +38,8 @@ class FrameSubTypes(Flag):
     WORK_TYPE4 = 0b1011
 
 
-class ParamTypesForCheck(Enum):
-    globalCoreId = 0
-    starId = 1
-    payload = 2
-    chipId = 3
-    sram = 4
-    frameNum = 5
-
-
 @dataclass
-class FrameMasks:
+class FrameMask:
     '''
         Format of data package or single frame for general usages:
     '''
@@ -114,7 +105,7 @@ class FrameMasks:
 
 
 @dataclass
-class ConfigFrameMasks(FrameMasks):
+class ConfigFrameMask(FrameMask):
     '''Specific for Conguration Frame Type II'''
 
     '''General'''
@@ -166,7 +157,7 @@ class ConfigFrameMasks(FrameMasks):
 
 
 @unique
-class WeightPrecisionTypes(Enum):
+class WeightPrecisionType(Enum):
     '''Wight precision of crossbar'''
     WEIGHT_WIDTH_1BIT = 0
     WEIGHT_WIDTH_2BIT = 1
@@ -187,34 +178,37 @@ class LCNTypes(Enum):
 
 
 @unique
-class InputWidthTypes(Enum):
+class InputWidthType(Enum):
     '''Format of Input Spike'''
     INPUT_WIDTH_1BIT = 0
     INPUT_WIDTH_8BIT = 1
 
 
 @unique
-class SpikeWidthTypes(Enum):
+class SpikeWidthType(Enum):
     '''Format of Output Spike'''
     SPIKE_WIDTH_1BIT = 0
     SPIKE_WIDTH_8BIT = 1
 
 
 class Coord:
+    '''Unchangeable coordinate'''
 
-    def __init__(self, x, y):
-        assert -31 < x < 32
-        assert -31 < y < 32
+    def __init__(self, x: int, y: int):
+        assert 0 <= x < 32 and 0 <= y < 32
         self.x, self.y = x, y
 
     def __add__(self, other):
         return Coord(self.x + other.x, self.y + other.y)
 
     def __sub__(self, other):
-        return Coord(self.x - other.x, self.y - other.y)
+        return CoordOffset(self.x - other.x, self.y - other.y)
 
     def __eq__(self, other) -> bool:
         return self.x == other.x and self.y == other.y
+
+    def __ne__(self, other) -> bool:
+        return self.x != other.x or self.y != other.y
 
     def __lt__(self, other) -> bool:
         '''Whether on the left or below'''
@@ -226,10 +220,35 @@ class Coord:
             (self.x == other.x and self.y > other.y) or \
             (self.x > other.x and self.y == other.y)
 
+    def __le__(self, other) -> bool:
+        return self.__lt__(other) or self.__eq__(other)
+
+    def __ge__(self, other) -> bool:
+        return self.__gt__(other) or self.__eq__(other)
+
     def __str__(self) -> str:
-        return f"{self.x}, {self.y}"
+        return f"({self.x}, {self.y})"
 
     __repr__ = __str__
+
+
+class CoordOffset(Coord):
+
+    def __init__(self, x, y):
+        assert -31 < x < 32 and -31 < y < 32
+        self.x, self.y = x, y
+
+    def __add__(self, other):
+        if isinstance(other, CoordOffset):
+            return CoordOffset(self.x + other.x, self.y + other.y)
+        else:
+            return Coord(self.x + other.x, self.y + other.y)
+
+    def __sub__(self, other):
+        if isinstance(other, Coord):
+            raise TypeError("A CoordOffset cannot substract a Coord")
+
+        return CoordOffset(self.x - other.x, self.y - other.y)
 
 
 @unique
@@ -239,7 +258,7 @@ class Direction(Enum):
         Left to right: +x
         Top to bottom: +y
     '''
-    EAST = Coord(1, 0)
-    SOUTH = Coord(0, 1)
-    WEST = Coord(-1, 0)
-    NORTH = Coord(0, -1)
+    EAST = CoordOffset(1, 0)
+    SOUTH = CoordOffset(0, 1)
+    WEST = CoordOffset(-1, 0)
+    NORTH = CoordOffset(0, -1)
