@@ -8,8 +8,7 @@ __all__ = [
     "Addr2Coord",
     "Coord2Addr",
     "FrameGen",
-    "FrameDecoder",
-    "FrameDecode"
+    "FrameDecoder"
 ]
 
 
@@ -184,9 +183,7 @@ class FrameDecoder:
         self._len: int
         self._frame: int
         self._frames_group: Tuple[int, ...]
-        
-        # For type I
-        self._random_seed: int = 0
+        self._payload: Union[int, Tuple[int, ...]]
 
         # For type II
         self._param_reg_dict: Dict[str, Union[int, bool, Coord]] = {
@@ -206,7 +203,7 @@ class FrameDecoder:
     def decode(self, frames: Union[List[int], Tuple[int, ...], int]) -> None:
         '''
             Call for decoding a frame or a valid group of frames.
-        
+
             Support single frame decoding & a group of 3 frames only.
         '''
         if isinstance(frames, int):
@@ -217,24 +214,22 @@ class FrameDecoder:
             self._len = len(frames)
             self._frame = frames[0]
             self._frames_group = tuple(frames)
-        
+
         self._decode()
-        
+
     __call__ = decode
 
-    @property
-    def subtype(self) -> FST:
+    def _get_subtype(self) -> FST:
         _header: int = (
             self._frame >> FM.GENERAL_HEADER_OFFSET) & FM.GENERAL_HEADER_MASK
         try:
-            _type = FrameSubType(_header)
-            return _type
+            _subtype = FrameSubType(_header)
+            return _subtype
         except:
-            raise ValueError(f"Frame header {_header} is illigal!")
+            raise TypeError(f"Frame header {_header} is illigal!")
 
-    @property
-    def type(self) -> FrameType:
-        subtype_v = self.subtype.value
+    def _get_type(self) -> FrameType:
+        subtype_v: int = self._get_subtype().value
 
         if subtype_v < 0b0100:
             return FrameType.FRAME_CONFIG
@@ -245,117 +240,114 @@ class FrameDecoder:
 
         return FrameType.FRAME_UNKNOWN
 
-    @property
-    def chip_coord(self) -> Coord:
+    def _get_chip_coord(self) -> Coord:
         _chip_addr: int = (
             self._frame >> FM.GENERAL_CHIP_ADDR_OFFSET) & FM.GENERAL_CHIP_ADDR_MASK
+
         return Addr2Coord(_chip_addr)
 
-    @property
-    def core_coord(self) -> Coord:
+    def _get_core_coord(self) -> Coord:
         _core_addr: int = (
             self._frame >> FM.GENERAL_CORE_ADDR_OFFSET) & FM.GENERAL_CORE_ADDR_MASK
+
         return Addr2Coord(_core_addr)
 
-    @property
-    def core_star_coord(self) -> Coord:
+    def _get_core_star_coord(self) -> Coord:
         _core_star_addr: int = (
             self._frame >> FM.GENERAL_CORE_STAR_ADDR_OFFSET) & FM.GENERAL_CORE_STAR_ADDR_MASK
+
         return Addr2Coord(_core_star_addr)
 
-    @property
-    def payload(self) -> Union[List[int], int]:
+    def _get_payload(self) -> Union[List[int], int]:
         if self._len == 1:
             return (self._frame >> FM.GENERAL_PAYLOAD_OFFSET) & FM.GENERAL_PAYLOAD_MASK
 
         _payload: List[int] = []
 
-        for i in range(self._len):
-            _payload.append(
-                (self._frames_group[i] >> FM.GENERAL_PAYLOAD_OFFSET) & FM.GENERAL_PAYLOAD_MASK)
+        for frame in self._frames_group:
+            _payload.append((frame >> FM.GENERAL_PAYLOAD_OFFSET)
+                            & FM.GENERAL_PAYLOAD_MASK)
 
         return _payload
 
-    @property
-    def param_reg(self) -> Dict[str, Any]:
-        return self._param_reg_dict
-
     def _decode(self) -> None:
-        if self.subtype == FST.CONFIG_TYPE2:
+        subtype = self._get_subtype()
+
+        if subtype == FST.CONFIG_TYPE2:
             self._decode_config2()
         else:
             raise NotImplementedError
-        
+
+        self._info(subtype)
+
     def _decode_config1(self):
         pass
-    
+
     def _decode_config2(self):
         self._param_reg_parse()
-    
+
     def _decode_testout1(self):
         pass
-    
+
     def _decode_testout2(self):
         pass
-    
+
     def _decode_testin1(self):
         pass
-    
+
     def _decode_testin2(self):
         pass
 
-    def info(self) -> None:
+    def _info(self, subtype: FST) -> None:
         self._general_info()
 
-        if self.type == FrameType.FRAME_CONFIG:
-            return self._config_info()
+        if subtype == FST.CONFIG_TYPE2:
+            return self._config2_info()
         else:
             raise NotImplementedError
 
     def _general_info(self) -> None:
         print("General info of frame: 0x%x" % self._frame)
-        print("#1  Frame type:         %s" % self.subtype)
+        print("#1  Frame type:         %s" % self._get_subtype())
+
+        chip_coord = self._get_chip_coord()
         print("#2  Chip address:       [0x%02x | 0x%02x]" % (
-            self.chip_coord.x, self.chip_coord.y))
+            chip_coord.x, chip_coord.y))
+
+        core_coord = self._get_core_coord()
         print("#3  Core address:       [0x%02x | 0x%02x]" % (
-            self.core_coord.x, self.core_coord.y))
+            core_coord.x, core_coord.y))
+
+        core_star_coord = self._get_core_star_coord()
         print("#4  Core* address:      [0x%02x | 0x%02x]" %
-              (self.core_star_coord.x, self.core_star_coord.y))
+              (core_star_coord.x, core_star_coord.y))
 
-    def _config_info(self) -> None:
-        if self.subtype == FST.CONFIG_TYPE2:
-            print("Info of parameter registers")
-            print("#1  Weight width:       0x%x" %
-                  self._param_reg_dict["weight_width"])
-            print("#2  LCN:                0x%x" % self._param_reg_dict["LCN"])
-            print("#3  Input width:        0x%x" %
-                  self._param_reg_dict["input_width"])
-            print("#4  Spike width:        0x%x" %
-                  self._param_reg_dict["spike_width"])
-            print("#5  Neuron num:         %d" %
-                  self._param_reg_dict["neuron_num"])
-            print("#6  Pool max enable:    %d" %
-                  self._param_reg_dict["pool_max"])
-            print("#7  Tick wait start:    0x%x" %
-                  self._param_reg_dict["tick_wait_start"])
-            print("#8  Tick wait end:      0x%x" %
-                  self._param_reg_dict["tick_wait_end"])
-            print("#9  SNN enable:         %d" %
-                  self._param_reg_dict["SNN_EN"])
-            print("#10 Target LCN:         0x%x" %
-                  self._param_reg_dict["target_LCN"])
+    def _config2_info(self) -> None:
+        print("Info of parameter registers")
+        print("#1  Weight width:       0x%x" %
+              self._param_reg_dict["weight_width"])
+        print("#2  LCN:                0x%x" % self._param_reg_dict["LCN"])
+        print("#3  Input width:        0x%x" %
+              self._param_reg_dict["input_width"])
+        print("#4  Spike width:        0x%x" %
+              self._param_reg_dict["spike_width"])
+        print("#5  Neuron num:         %d" %
+              self._param_reg_dict["neuron_num"])
+        print("#6  Pool max enable:    %d" % self._param_reg_dict["pool_max"])
+        print("#7  Tick wait start:    0x%x" %
+              self._param_reg_dict["tick_wait_start"])
+        print("#8  Tick wait end:      0x%x" %
+              self._param_reg_dict["tick_wait_end"])
+        print("#9  SNN enable:         %d" % self._param_reg_dict["SNN_EN"])
+        print("#10 Target LCN:         0x%x" %
+              self._param_reg_dict["target_LCN"])
 
-            test_chip_coord: Coord = self._param_reg_dict["test_chip_coord"] # type: ignore
-            print("#11 Test chip addr:     [0x%02x | 0x%02x]" % (
-                test_chip_coord.x, test_chip_coord.y))
-        else:
-            raise NotImplementedError
+        test_chip_coord: Coord = self._param_reg_dict["test_chip_coord"] # type: ignore
+        print("#11 Test chip coord:    [0x%02x | 0x%02x]" % (
+            test_chip_coord.x, test_chip_coord.y))
 
-    def _test_info(self) -> None:
-        if self.subtype == FST.TEST_TYPE2:
-            pass
-        else:
-            raise NotImplementedError
+    def _test2_info(self) -> None:
+        pass
 
     def _param_reg_parse(self) -> None:
         self._param_reg_dict["weight_width"] = (
@@ -387,12 +379,12 @@ class FrameDecoder:
 
         high3 = self._frames_group[1] >> CFM.TEST_CHIP_ADDR_HIGH3_OFFSET
         low7 = self._frames_group[2] >> CFM.TEST_CHIP_ADDR_LOW7_OFFSET
-        self._param_reg_dict["test_chip_addr"] = test_chip_addr_combine(
+        self._param_reg_dict["test_chip_coord"] = test_chip_addr_combine(
             high3, low7)
 
     def _decode_direction(self) -> Direction:
         offset: CoordOffset = self._param_reg_dict["test_chip_coord"] - \
-            self.chip_coord # type: ignore
+            self.chip_coord  # type: ignore
 
         try:
             direction = Direction(offset)
