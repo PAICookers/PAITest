@@ -1,6 +1,7 @@
-from .frame_params import FrameType, FrameSubType as FST, FrameMask as FM, ConfigFrameMask as CFM
+from .frame_params import FrameType, FrameSubType as FST, \
+    FrameMask as FM, ConfigFrameMask as CFM
 from .frame_params import *
-from typing import List, Tuple, Union, Dict, Optional, Any
+from typing import List, Tuple, Union, Dict, Optional
 import random
 
 
@@ -183,7 +184,6 @@ class FrameDecoder:
         self._len: int
         self._frame: int
         self._frames_group: Tuple[int, ...]
-        self._payload: Union[int, Tuple[int, ...]]
 
         # For type II
         self._param_reg_dict: Dict[str, Union[int, bool, Coord]] = {
@@ -217,8 +217,6 @@ class FrameDecoder:
 
         self._decode()
 
-    __call__ = decode
-
     def _get_subtype(self) -> FST:
         _header: int = (
             self._frame >> FM.GENERAL_HEADER_OFFSET) & FM.GENERAL_HEADER_MASK
@@ -229,16 +227,18 @@ class FrameDecoder:
             raise TypeError(f"Frame header {_header} is illigal!")
 
     def _get_type(self) -> FrameType:
-        subtype_v: int = self._get_subtype().value
+        _subtype_v: int = self._get_subtype().value
 
-        if subtype_v < 0b0100:
-            return FrameType.FRAME_CONFIG
-        elif subtype_v < 0b1000:
-            return FrameType.FRAME_TEST
-        elif subtype_v < 0b1100:
-            return FrameType.FRAME_WORK
+        if _subtype_v < 0b0100:
+            _type = FrameType.FRAME_CONFIG
+        elif _subtype_v < 0b1000:
+            _type = FrameType.FRAME_TEST
+        elif _subtype_v < 0b1100:
+            _type = FrameType.FRAME_WORK
+        else:
+            _type = FrameType.FRAME_UNKNOWN
 
-        return FrameType.FRAME_UNKNOWN
+        return _type
 
     def _get_chip_coord(self) -> Coord:
         _chip_addr: int = (
@@ -255,18 +255,19 @@ class FrameDecoder:
     def _get_core_star_coord(self) -> Coord:
         _core_star_addr: int = (
             self._frame >> FM.GENERAL_CORE_STAR_ADDR_OFFSET) & FM.GENERAL_CORE_STAR_ADDR_MASK
-
+        
         return Addr2Coord(_core_star_addr)
 
     def _get_payload(self) -> Union[List[int], int]:
         if self._len == 1:
-            return (self._frame >> FM.GENERAL_PAYLOAD_OFFSET) & FM.GENERAL_PAYLOAD_MASK
-
-        _payload: List[int] = []
-
-        for frame in self._frames_group:
-            _payload.append((frame >> FM.GENERAL_PAYLOAD_OFFSET)
-                            & FM.GENERAL_PAYLOAD_MASK)
+            _payload = (self._frame >> FM.GENERAL_PAYLOAD_OFFSET) & FM.GENERAL_PAYLOAD_MASK
+        else:
+            _payload = []
+            for frame in self._frames_group:
+                _payload.append((frame >> FM.GENERAL_PAYLOAD_OFFSET)
+                                & FM.GENERAL_PAYLOAD_MASK)
+            
+        self._payload = _payload
 
         return _payload
 
@@ -309,7 +310,7 @@ class FrameDecoder:
     def _general_info(self) -> None:
         print("General info of frame: 0x%x" % self._frame)
         print("#1  Frame type:         %s" % self._get_subtype())
-
+        
         chip_coord = self._get_chip_coord()
         print("#2  Chip address:       [0x%02x | 0x%02x]" % (
             chip_coord.x, chip_coord.y))
