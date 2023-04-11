@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from enum import Flag, Enum, unique
+from typing import Tuple, Union, Optional
 
 
 @unique
@@ -194,8 +195,17 @@ class SpikeWidthType(Enum):
 class Coord:
     '''Unchangeable coordinate'''
 
-    def __init__(self, x: int, y: int):
-        assert 0 <= x < 32 and 0 <= y < 32
+    def __init__(self, _x: Union[Tuple[int, int], int], _y: Optional[int] = None):
+        if isinstance(_x, Tuple):
+            x, y = _x[0], _x[1]
+        elif isinstance(_y, int):
+            x, y = _x, _y
+        else:
+            raise ValueError("Coordinate Y is missing!")
+        
+        if not 0 <= x < 32 or not 0 <= y < 32:
+            raise ValueError(f"0 <= x < 32, 0 <= y < 32: ({x}, {y})")
+        
         self.x, self.y = x, y
 
     def __add__(self, other):
@@ -235,7 +245,7 @@ class Coord:
 class CoordOffset(Coord):
 
     def __init__(self, x, y):
-        assert -31 < x < 32 and -31 < y < 32
+        assert -32 < x < 32 and -32 < y < 32
         self.x, self.y = x, y
 
     def __add__(self, other):

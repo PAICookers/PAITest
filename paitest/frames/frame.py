@@ -8,7 +8,8 @@ __all__ = [
     "Addr2Coord",
     "Coord2Addr",
     "FrameGen",
-    "FrameDecoder"
+    "FrameDecoder",
+    "FrameDecode"
 ]
 
 
@@ -179,13 +180,15 @@ class FrameGen:
 
 class FrameDecoder:
 
-    def __init__(self, frames: Union[List[int], Tuple[int, ...]]):
+    def __init__(self):
+        self._len: int
+        self._frame: int
+        self._frames_group: Tuple[int, ...]
+        
+        # For type I
+        self._random_seed: int = 0
 
-        self._len = len(frames)
-        self._frame = frames[0]
-        self._frames_group = tuple(frames)
-
-        '''For type II'''
+        # For type II
         self._param_reg_dict: Dict[str, Union[int, bool, Coord]] = {
             "weight_width": 0,
             "LCN": 0,
@@ -200,7 +203,24 @@ class FrameDecoder:
             "test_chip_coord": Coord(0, 0)
         }
 
+    def decode(self, frames: Union[List[int], Tuple[int, ...], int]) -> None:
+        '''
+            Call for decoding a frame or a valid group of frames.
+        
+            Support single frame decoding & a group of 3 frames only.
+        '''
+        if isinstance(frames, int):
+            self._len = 1
+            self._frame = frames
+        else:
+            assert len(frames) == 3
+            self._len = len(frames)
+            self._frame = frames[0]
+            self._frames_group = tuple(frames)
+        
         self._decode()
+        
+    __call__ = decode
 
     @property
     def subtype(self) -> FST:
@@ -262,9 +282,27 @@ class FrameDecoder:
 
     def _decode(self) -> None:
         if self.subtype == FST.CONFIG_TYPE2:
-            self._param_reg_parse()
+            self._decode_config2()
         else:
             raise NotImplementedError
+        
+    def _decode_config1(self):
+        pass
+    
+    def _decode_config2(self):
+        self._param_reg_parse()
+    
+    def _decode_testout1(self):
+        pass
+    
+    def _decode_testout2(self):
+        pass
+    
+    def _decode_testin1(self):
+        pass
+    
+    def _decode_testin2(self):
+        pass
 
     def info(self) -> None:
         self._general_info()
@@ -306,7 +344,7 @@ class FrameDecoder:
                   self._param_reg_dict["SNN_EN"])
             print("#10 Target LCN:         0x%x" %
                   self._param_reg_dict["target_LCN"])
-            
+
             test_chip_coord: Coord = self._param_reg_dict["test_chip_coord"] # type: ignore
             print("#11 Test chip addr:     [0x%02x | 0x%02x]" % (
                 test_chip_coord.x, test_chip_coord.y))
@@ -352,8 +390,9 @@ class FrameDecoder:
         self._param_reg_dict["test_chip_addr"] = test_chip_addr_combine(
             high3, low7)
 
-    def _test_chip_direction(self) -> Direction:
-        offset: CoordOffset = self._param_reg_dict["test_chip_coord"] - self.chip_coord # type: ignore
+    def _decode_direction(self) -> Direction:
+        offset: CoordOffset = self._param_reg_dict["test_chip_coord"] - \
+            self.chip_coord # type: ignore
 
         try:
             direction = Direction(offset)
