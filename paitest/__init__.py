@@ -1,2 +1,1 @@
-from .frames.frame_params import TestChipDirection as TestChipDirection
-from .paitest import GenTestCases as GenTestCases
+from .paitest import paitest as paitest
