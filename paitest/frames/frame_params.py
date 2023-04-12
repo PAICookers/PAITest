@@ -202,10 +202,10 @@ class Coord:
             x, y = _x, _y
         else:
             raise ValueError("Coordinate Y is missing!")
-        
+
         if not (0 <= x < 32 and 0 <= y < 32):
             raise ValueError(f"0 <= x < 32, 0 <= y < 32: ({x}, {y})")
-        
+
         self.x, self.y = x, y
 
     def __add__(self, other):
@@ -247,7 +247,7 @@ class CoordOffset(Coord):
     def __init__(self, _x: int, _y: int):
         if not (-32 < _x < 32 and -32 < _y < 32):
             raise ValueError(f"-32 < x < 32, -32 < y < 32: ({_x}, {_y})")
-            
+
         self.x, self.y = _x, _y
 
     def __add__(self, other):

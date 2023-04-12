@@ -200,7 +200,7 @@ class FrameDecoder:
             "test_chip_coord": Coord(0, 0)
         }
 
-    def decode(self, frames: Union[List[int], Tuple[int, ...], int]) -> None:
+    def decode(self, frames: Union[int, List[int], Tuple[int, ...]]) -> None:
         '''
             Call for decoding a frame or a valid group of frames.
 
@@ -255,18 +255,19 @@ class FrameDecoder:
     def _get_core_star_coord(self) -> Coord:
         _core_star_addr: int = (
             self._frame >> FM.GENERAL_CORE_STAR_ADDR_OFFSET) & FM.GENERAL_CORE_STAR_ADDR_MASK
-        
+
         return Addr2Coord(_core_star_addr)
 
     def _get_payload(self) -> Union[List[int], int]:
         if self._len == 1:
-            _payload = (self._frame >> FM.GENERAL_PAYLOAD_OFFSET) & FM.GENERAL_PAYLOAD_MASK
+            _payload = (self._frame >>
+                        FM.GENERAL_PAYLOAD_OFFSET) & FM.GENERAL_PAYLOAD_MASK
         else:
             _payload = []
             for frame in self._frames_group:
                 _payload.append((frame >> FM.GENERAL_PAYLOAD_OFFSET)
                                 & FM.GENERAL_PAYLOAD_MASK)
-            
+
         self._payload = _payload
 
         return _payload
@@ -310,7 +311,7 @@ class FrameDecoder:
     def _general_info(self) -> None:
         print("General info of frame: 0x%x" % self._frame)
         print("#1  Frame type:         %s" % self._get_subtype())
-        
+
         chip_coord = self._get_chip_coord()
         print("#2  Chip address:       [0x%02x | 0x%02x]" % (
             chip_coord.x, chip_coord.y))
