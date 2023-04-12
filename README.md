@@ -33,14 +33,14 @@ config_frames, testin_frames, testout_frames = \
 PAITestManager.SaveFrames("./test/config_1.bin", config_frames)
 ```
 
-5. 生成的 `N` 组配置帧II型、测试输入帧II型及参考测试输出帧II型在 `save_path` 下：
+生成的 `N` 组配置帧II型、测试输入帧II型及参考测试输出帧II型在 `save_path` 下：
 
-   ```python
-   save_path
-   ├ config.bin
-   ├ testin.bin
-   └ testout.bin
-   ```
+```python
+save_path
+├ config.bin
+├ testin.bin
+└ testout.bin
+```
 
 ## 🗓️ TODO
 
