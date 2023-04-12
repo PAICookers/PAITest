@@ -1,6 +1,5 @@
 from typing import Literal, Tuple, List, Optional, Union, overload
 from pathlib import Path
-import io
 from .frames.frame import Coord
 
 
@@ -14,28 +13,22 @@ class paitest:
                                 N: int,
                                 *,
                                 save_dir: Optional[Union[str, Path]] = None,
-                                masked_core_coord: Optional[Coord] = None
+                                masked_core_coord: Optional[Tuple[int, int]] = None
                                 ) -> Tuple[Tuple[int, ...], ...]: ...
 
-    @overload
-    def Get1CaseForNCores(self, N: int) -> List[Tuple[int, ...]]: ...
-
-    @overload
-    def Get1CaseForNCores(
-        self, N: int, *, save_dir: Union[str, Path]) -> List[Tuple[int, ...]]: ...
-
-    @overload
-    def Get1CaseForNCores(
-        self, N: int, *, masked_core_coord: Coord) -> List[Tuple[int, ...]]: ...
-
-    @overload
-    def Get1CaseForNCores(
-        self, N: int, *, save_dir: Union[str, Path], masked_core_coord: Coord) -> List[Tuple[int, ...]]: ...
+    def Get1CaseForNCores(self,
+                          N: int,
+                          *,
+                          save_dir: Optional[Union[str, Path]] = None,
+                          masked_core_coord: Optional[Tuple[int, int]] = None
+                          ) -> Tuple[Tuple[int, ...], ...]: ...
 
     @overload
     def ReplaceCoreCoord(self, frames: int) -> int: ...
     @overload
-    def ReplaceCoreCoord(self, frames: List[int]) -> List[int]: ...
+    def ReplaceCoreCoord(self, frames: List[int]) -> Tuple[int, ...]: ...
+    @overload
+    def ReplaceCoreCoord(self, frames: Tuple[int, ...]) -> Tuple[int, ...]: ...
 
     @overload
     def ReplaceCoreCoord(
@@ -43,8 +36,12 @@ class paitest:
 
     @overload
     def ReplaceCoreCoord(
-        self, frames: List[int], new_core_coord: Tuple[int, int]) -> List[int]: ...
-    
+        self, frames: List[int], new_core_coord: Tuple[int, int]) -> Tuple[int, ...]: ...
+
+    @overload
+    def ReplaceCoreCoord(
+        self, frames: Tuple[int, ...], new_core_coord: Tuple[int, int]) -> Tuple[int, ...]: ...
+
     @staticmethod
     def SaveFrames(save_path: Union[str, Path],
                    frames: Union[int, List[int], Tuple[int, ...]]

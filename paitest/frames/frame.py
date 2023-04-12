@@ -1,5 +1,8 @@
-from .frame_params import FrameType, FrameSubType as FST, \
-    FrameMask as FM, ConfigFrameMask as CFM
+from .frame_params import \
+    FrameType as FT, \
+    FrameSubType as FST, \
+    FrameMask as FM, \
+    ConfigFrameMask as CFM
 from .frame_params import *
 from typing import List, Tuple, Union, Dict, Optional
 import random
@@ -9,7 +12,7 @@ __all__ = [
     "Addr2Coord",
     "Coord2Addr",
     "FrameGen",
-    "FrameDecoder"
+    "Coord"
 ]
 
 
@@ -226,17 +229,17 @@ class FrameDecoder:
         except:
             raise TypeError(f"Frame header {_header} is illigal!")
 
-    def _get_type(self) -> FrameType:
+    def _get_type(self) -> FT:
         _subtype_v: int = self._get_subtype().value
 
         if _subtype_v < 0b0100:
-            _type = FrameType.FRAME_CONFIG
+            _type = FT.FRAME_CONFIG
         elif _subtype_v < 0b1000:
-            _type = FrameType.FRAME_TEST
+            _type = FT.FRAME_TEST
         elif _subtype_v < 0b1100:
-            _type = FrameType.FRAME_WORK
+            _type = FT.FRAME_WORK
         else:
-            _type = FrameType.FRAME_UNKNOWN
+            _type = FT.FRAME_UNKNOWN
 
         return _type
 
