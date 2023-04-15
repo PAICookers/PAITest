@@ -1,27 +1,36 @@
 from typing import Literal, Tuple, List, Optional, Union, overload
 from pathlib import Path
-from .frames.frame import Coord
 
 
 class paitest:
     def __init__(self,
-                 direction: Literal["EAST", "SOUTH", "WEST", "NORTH"],
-                 core_coord: Tuple[int, int] = (0, 0)
+                 direction: Literal["EAST", "SOUTH", "WEST", "NORTH"] = "EAST",
+                 fixed_chip_coord: Tuple[int, int] = (0, 0)
                  ) -> None: ...
 
-    def GetRandomCasesForNCores(self,
-                                N: int,
-                                *,
-                                save_dir: Optional[Union[str, Path]] = None,
-                                masked_core_coord: Optional[Tuple[int, int]] = None
-                                ) -> Tuple[Tuple[int, ...], ...]: ...
+    def Get1GroupForNCoresWithNParams(self,
+                                      N: int,
+                                      *,
+                                      save_dir: Optional[Union[str,
+                                                               Path]] = None,
+                                      masked_core_coord: Optional[Tuple[int, int]] = None
+                                      ) -> Tuple[Tuple[int, ...], ...]: ...
 
-    def Get1CaseForNCores(self,
-                          N: int,
-                          *,
-                          save_dir: Optional[Union[str, Path]] = None,
-                          masked_core_coord: Optional[Tuple[int, int]] = None
-                          ) -> Tuple[Tuple[int, ...], ...]: ...
+    def Get1GroupForNCoresWith1Param(self,
+                                     N: int,
+                                     *,
+                                     save_dir: Optional[Union[str,
+                                                              Path]] = None,
+                                     masked_core_coord: Optional[Tuple[int, int]] = None
+                                     ) -> Tuple[Tuple[int, ...], ...]: ...
+
+    def GetNGroupsFor1CoreWithNParams(self,
+                                      N: int,
+                                      *,
+                                      save_dir: Optional[Union[str,
+                                                              Path]] = None,
+                                      masked_core_coord: Optional[Tuple[int, int]] = None
+                                      ) -> Tuple[Tuple[int, ...], ...]: ...
 
     @overload
     def ReplaceCoreCoord(self, frames: int) -> int: ...
