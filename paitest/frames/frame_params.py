@@ -200,7 +200,7 @@ class SpikeWidthType(Enum):
 
 
 class Coord:
-    """Unchangeable coordinate"""
+    """Coordinate class"""
 
     def __init__(self, _x: Union[Tuple[int, int], int], _y: Optional[int] = None):
         if isinstance(_x, Tuple):
@@ -229,7 +229,7 @@ class Coord:
 
     def __lt__(self, other) -> bool:
         """Whether on the left or below"""
-        return not (self.x > other.x and self.y > other.y)
+        return (self.x < other.x or self.y < other.y)
 
     def __gt__(self, other) -> bool:
         """Whether on the right and above"""

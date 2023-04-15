@@ -5,11 +5,8 @@ from .frame_params import (
     ConfigFrameMask as CFM,
 )
 from .frame_params import *
-from typing import List, Tuple, Union, Dict, Optional
+from typing import List, Tuple, Union, Dict, Optional, Any
 import random
-
-
-__all__ = ["Addr2Coord", "Coord2Addr", "FrameGen", "Coord"]
 
 
 def Addr2Coord(addr: int) -> Coord:
@@ -194,8 +191,19 @@ class FrameDecoder:
         self.groups_len: int
         self._frame: int
         self._frames_group: Tuple[int, ...]
+        
+        # Total attributes dictionary
+        self._attr_dict: Dict[str, Any] = {}
+        
+        # For general attributes:
+        self._general_attr: Dict[str, Union[FST, Coord]] = {
+            "sub_type": FST.CONFIG_TYPE2,
+            "chip_coord": Coord(0, 0),
+            "core_coord": Coord(0, 0),
+            "core_star_coord": Coord(0, 0)
+        }
 
-        # For type II
+        # For type II attributes
         self._param_reg_dict: Dict[str, Union[int, bool, Coord]] = {
             "weight_width": 0,
             "LCN": 0,
@@ -210,7 +218,7 @@ class FrameDecoder:
             "test_chip_coord": Coord(0, 0),
         }
 
-    def decode(self, frames: Union[int, List[int], Tuple[int, ...]]) -> None:
+    def decode(self, frames: Union[int, List[int], Tuple[int, ...]]) -> Dict[str, Any]:
         """
         Call for decoding a frame or a valid group of frames.
 
@@ -226,6 +234,7 @@ class FrameDecoder:
             self._frames_group = tuple(frames)
 
         self._decode()
+        return self._attr_dict
 
     def _get_subtype(self) -> FST:
         _header: int = (
@@ -290,9 +299,14 @@ class FrameDecoder:
 
     def _decode(self) -> None:
         subtype = self._get_subtype()
+        self._general_attr["sub_type"] = subtype
+        self._general_attr["chip_coord"] = self._get_chip_coord()
+        self._general_attr["core_coord"] = self._get_core_coord()
+        self._general_attr["core_star_coord"] = self._get_core_star_coord()
 
         if subtype == FST.CONFIG_TYPE2:
             self._decode_config2()
+            self._attr_dict = {**self._general_attr, **self._param_reg_dict}
         else:
             raise NotImplementedError
 
@@ -301,7 +315,7 @@ class FrameDecoder:
     def _decode_config1(self):
         pass
 
-    def _decode_config2(self):
+    def _decode_config2(self) -> None:
         self._param_reg_parse()
 
     def _decode_testout1(self):
@@ -411,13 +425,11 @@ class FrameDecoder:
         self._param_reg_dict["test_chip_coord"] = test_chip_addr_combine(high3, low7)
 
     def _decode_direction(self) -> Direction:
-        offset: CoordOffset = (
-            self._param_reg_dict["test_chip_coord"] - self.chip_coord
-        )  # type: ignore
+        test_chip_coord: Coord = self._param_reg_dict["test_chip_coord"]  # type: ignore
+        offset = test_chip_coord - self._get_chip_coord()
 
         try:
             direction = Direction(offset)
             return direction
-        except ValueError:
-            print("Offset is invalid, return the default direction: EAST")
-            return Direction("EAST")
+        except:
+            raise ValueError("Offset is invalid. Check the parameters.")

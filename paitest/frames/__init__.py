@@ -6,4 +6,5 @@ from .frame import (
     Direction as Direction,
     FrameMask as FrameMask,
     FrameSubType as FrameSubType,
+    FrameDecoder as FrameDecoder
 )

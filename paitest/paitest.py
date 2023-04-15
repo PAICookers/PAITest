@@ -49,7 +49,7 @@ class paitest:
         masked_core_coord: Optional[Tuple[int, int]] = None,
     ) -> Tuple[Tuple[int, ...], ...]:
         """
-        Generate 1 group(case) for 'N' cores coordinates with 'N' different parameters.
+        Generate 1 group(case) for 'N' random cores coordinates with 'N' different parameters.
 
         - `N`: How many cores coordinates under test.
         - `save_dir`: Where to save the frames files.
@@ -163,7 +163,7 @@ class paitest:
         # 1. Get the test chip coordinate.
         test_chip_coord = self._direction.value + self._fixed_chip_coord
 
-        # 2. Get the core coordinates list.
+        # 2. Get N core coordinates list.
         if isinstance(masked_core_coord, Tuple):
             _masked_core_coord = Coord(masked_core_coord)
         else:
@@ -392,14 +392,13 @@ class paitest:
             self._ensure_coord(masked_coord)
             if N > 1007:
                 raise ValueError(
-                    "When choose to mask a core, \
-                        the max value of cores to be generated is 1007"
+                    "When choose to mask a core, the max value of cores to be generated is 1007"
                 )
 
         generator = _CoordGenerator()
-        core_addr_list = [next(generator) for _ in range(N)]
+        core_coord_list = [next(generator) for _ in range(N)]
 
-        return core_addr_list
+        return core_coord_list
 
     def _Get1Param(
         self, core_coords: Union[List[Coord], Coord], is_legal: bool = False
@@ -415,8 +414,7 @@ class paitest:
     ) -> List[List[int]]:
         """
         Generate 'N' parameters reg for parameter register.
-
-        is_legal: whether to generate legal parameters for every core
+        - `is_legal`: whether to generate legal parameters for every core
         """
 
         def _ParamGenerator():
@@ -466,7 +464,6 @@ class paitest:
     ) -> Tuple[int, ...]:
         """
         Replace the core coordinate of frames with a specific or random one.
-
         Indicate the core coordinate to specify it. Keep the parameters still.
         """
         mask = FM.GENERAL_MASK & (
@@ -495,15 +492,9 @@ class paitest:
 
         self._work_dir = _user_dir
 
-    def _ensure_groups(self, groups: int) -> None:
-        if groups > 1024 - 16:
-            raise ValueError("Value of groups is no more than 1008")
-
-        logger.info(f"{groups} groups cases will be generated...")
-
     def _ensure_cores(self, Ncores: int) -> None:
-        if Ncores > 1024 - 16:
-            raise ValueError("Value of cores is no more than 1008")
+        if Ncores > 1024 - 16 or Ncores < 1:
+            raise ValueError("Range of Ncores is 0 < N < 1008")
 
     def _ensure_direction(
         self, direction: Literal["EAST", "SOUTH", "WEST", "NORTH"]
