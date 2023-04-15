@@ -12,7 +12,7 @@ keywords = ["PAICookers", "PAITest", "PAICORE"]
 include = ["./paitest"]
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.6"
 
 [tool.poetry.group.dev.dependencies]
 autopep8 = "^2.0.2"

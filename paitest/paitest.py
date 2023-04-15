@@ -8,10 +8,14 @@ from .frames import (
     FrameSubType as FST,
 )
 from pathlib import Path
-from typing import List, Union, Literal, Tuple, Optional
+from typing import List, Union, Tuple, Optional
 import random
 import io
+import sys
 from .log import logger
+
+if sys.version_info >= (3, 8):
+    from typing import Literal
 
 
 __all__ = ["paitest"]
@@ -20,7 +24,7 @@ __all__ = ["paitest"]
 class paitest:
     def __init__(
         self,
-        direction: Literal["EAST", "SOUTH", "WEST", "NORTH"] = "EAST",
+        direction="EAST",
         fixed_chip_coord: Tuple[int, int] = (0, 0),
     ) -> None:
         """
@@ -496,10 +500,17 @@ class paitest:
         if Ncores > 1024 - 16 or Ncores < 1:
             raise ValueError("Range of Ncores is 0 < N < 1008")
 
-    def _ensure_direction(
-        self, direction: Literal["EAST", "SOUTH", "WEST", "NORTH"]
-    ) -> None:
-        self._direction = Direction[direction.upper()]
+    if sys.version_info >= (3, 8):
+
+        def _ensure_direction(
+            self, direction: Literal["EAST", "SOUTH", "WEST", "NORTH"]
+        ) -> None:
+            self._direction = Direction[direction.upper()]
+
+    else:
+
+        def _ensure_direction(self, direction: str) -> None:
+            self._direction = Direction[direction.upper()]
 
     def _ensure_coord(self, coord: Coord) -> None:
         if coord >= Coord(0b11100, 0b11100):

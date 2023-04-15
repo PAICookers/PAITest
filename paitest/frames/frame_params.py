@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from enum import Flag, Enum, unique
 from typing import Tuple, Union, Optional
 
@@ -41,7 +40,6 @@ class FrameSubType(Flag):
     WORK_TYPE4 = 0b1011
 
 
-@dataclass
 class FrameMask:
     """
     Format of data package or single frame for general usages:
@@ -108,7 +106,6 @@ class FrameMask:
     GENERAL_PACKAGE_COUNT_MASK = (1 << 19) - 1
 
 
-@dataclass
 class ConfigFrameMask(FrameMask):
     """Specific for Conguration Frame Type II"""
 
@@ -229,7 +226,7 @@ class Coord:
 
     def __lt__(self, other) -> bool:
         """Whether on the left or below"""
-        return (self.x < other.x or self.y < other.y)
+        return self.x < other.x or self.y < other.y
 
     def __gt__(self, other) -> bool:
         """Whether on the right and above"""
