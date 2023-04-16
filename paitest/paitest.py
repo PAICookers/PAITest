@@ -36,7 +36,7 @@ class paitest:
         self._fixed_core_star_coord: Coord = Coord(0, 0)
         self._test_chip_coord: Coord
 
-        self._ensure_direction(direction)
+        self._ensure_direction(direction)  # type: ignore
 
     def Get1GroupForNCoresWithNParams(
         self,
@@ -116,13 +116,9 @@ class paitest:
             )
 
         if isinstance(work_dir, Path):
-            with open(work_dir / "config.bin", "wb") as fc, open(
-                work_dir / "testin.bin", "wb"
-            ) as fi, open(work_dir / "testout.bin", "wb") as fo:
-                for cf_frame, to_frame, ti_frame in zip(cf_list, to_list, ti_list):
-                    fc.write(cf_frame.to_bytes(length=8, byteorder="big"))
-                    fo.write(to_frame.to_bytes(length=8, byteorder="big"))
-                    fi.write(ti_frame.to_bytes(length=8, byteorder="big"))
+            self.SaveFrames(work_dir / "config.bin", cf_list)
+            self.SaveFrames(work_dir / "testin.bin", ti_list)
+            self.SaveFrames(work_dir / "testout.bin", to_list)
 
         return tuple(cf_list), tuple(ti_list), tuple(to_list)
 
@@ -203,13 +199,9 @@ class paitest:
             )
 
         if isinstance(work_dir, Path):
-            with open(work_dir / "config.bin", "wb") as fc, open(
-                work_dir / "testin.bin", "wb"
-            ) as fi, open(work_dir / "testout.bin", "wb") as fo:
-                for cf_frame, to_frame, ti_frame in zip(cf_list, to_list, ti_list):
-                    fc.write(cf_frame.to_bytes(length=8, byteorder="big"))
-                    fo.write(to_frame.to_bytes(length=8, byteorder="big"))
-                    fi.write(ti_frame.to_bytes(length=8, byteorder="big"))
+            self.SaveFrames(work_dir / "config.bin", cf_list)
+            self.SaveFrames(work_dir / "testin.bin", ti_list)
+            self.SaveFrames(work_dir / "testout.bin", to_list)
 
         return tuple(cf_list), tuple(ti_list), tuple(to_list)
 
@@ -290,13 +282,9 @@ class paitest:
             )
 
         if isinstance(work_dir, Path):
-            with open(work_dir / "config.bin", "wb") as fc, open(
-                work_dir / "testin.bin", "wb"
-            ) as fi, open(work_dir / "testout.bin", "wb") as fo:
-                for cf_frame, to_frame, ti_frame in zip(cf_list, to_list, ti_list):
-                    fc.write(cf_frame.to_bytes(length=8, byteorder="big"))
-                    fo.write(to_frame.to_bytes(length=8, byteorder="big"))
-                    fi.write(ti_frame.to_bytes(length=8, byteorder="big"))
+            self.SaveFrames(work_dir / "config.bin", cf_list)
+            self.SaveFrames(work_dir / "testin.bin", ti_list)
+            self.SaveFrames(work_dir / "testout.bin", to_list)
 
         return tuple(cf_list), tuple(ti_list), tuple(to_list)
 
