@@ -187,20 +187,22 @@ class FrameGen:
 
 
 class FrameDecoder:
+    """Frame decoder"""
+
     def __init__(self):
         self.groups_len: int
         self._frame: int
         self._frames_group: Tuple[int, ...]
-        
+
         # Total attributes dictionary
         self._attr_dict: Dict[str, Any] = {}
-        
+
         # For general attributes:
         self._general_attr: Dict[str, Union[FST, Coord]] = {
             "sub_type": FST.CONFIG_TYPE2,
             "chip_coord": Coord(0, 0),
             "core_coord": Coord(0, 0),
-            "core_star_coord": Coord(0, 0)
+            "core_star_coord": Coord(0, 0),
         }
 
         # For type II attributes
@@ -344,17 +346,17 @@ class FrameDecoder:
 
         chip_coord = self._get_chip_coord()
         print(
-            "#2  Chip address:       [0x%02x | 0x%02x]" % (chip_coord.x, chip_coord.y)
+            "#2  Chip coordinate:    [0x%02x | 0x%02x]" % (chip_coord.x, chip_coord.y)
         )
 
         core_coord = self._get_core_coord()
         print(
-            "#3  Core address:       [0x%02x | 0x%02x]" % (core_coord.x, core_coord.y)
+            "#3  Core coordinate:    [0x%02x | 0x%02x]" % (core_coord.x, core_coord.y)
         )
 
         core_star_coord = self._get_core_star_coord()
         print(
-            "#4  Core* address:      [0x%02x | 0x%02x]"
+            "#4  Core* coordinate:   [0x%02x | 0x%02x]"
             % (core_star_coord.x, core_star_coord.y)
         )
 

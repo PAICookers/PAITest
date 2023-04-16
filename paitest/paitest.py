@@ -10,7 +10,6 @@ from .frames import (
 from pathlib import Path
 from typing import List, Union, Tuple, Optional
 import random
-import io
 import sys
 from .log import logger
 
@@ -31,12 +30,6 @@ class paitest:
         :param direction: The direction relative to the PAICORE. Default is 'EAST'.
         :param fixed_chip_coord: The chip address of the PAICORE under test. Default is (0, 0).
         """
-
-        self._work_dir: Union[Path, None] = None
-        self._fc: io.BufferedWriter
-        self._fi: io.BufferedWriter
-        self._fo: io.BufferedWriter
-
         self._verbose: bool = True
         self._fixed_chip_coord: Coord = Coord(fixed_chip_coord)
         self._masked_core_coord: Coord
@@ -64,9 +57,9 @@ class paitest:
         self._ensure_cores(N)
 
         if save_dir:
-            self._ensure_dir(save_dir)
+            work_dir = self._ensure_dir(save_dir)
         else:
-            self._work_dir = None
+            work_dir = None
 
         # 1. Get the test chip coordinate.
         test_chip_coord: Coord = self._direction.value + self._fixed_chip_coord
@@ -85,11 +78,6 @@ class paitest:
         cf_list: List[int] = []
         ti_list: List[int] = []
         to_list: List[int] = []
-
-        if self._work_dir:
-            self._fc = open(self._work_dir / "config.bin", "wb")
-            self._fi = open(self._work_dir / "testin.bin", "wb")
-            self._fo = open(self._work_dir / "testout.bin", "wb")
 
         for i in range(N):
             logger.info(f"Generating test group #{i+1}/{N}...")
@@ -119,10 +107,6 @@ class paitest:
                     % (j + 1, testout_frame, i + 1, N)
                 )
 
-                if self._work_dir:
-                    self._fc.write(config_frame.to_bytes(length=8, byteorder="big"))
-                    self._fo.write(testout_frame.to_bytes(length=8, byteorder="big"))
-
             testin_frame = FrameGen.GenTest2InFrame(
                 test_chip_coord, core_coord, self._fixed_core_star_coord
             )
@@ -131,13 +115,14 @@ class paitest:
                 "Test in frame  #1/1:  0x%x in group #%d/%d" % (testin_frame, i + 1, N)
             )
 
-            if self._work_dir:
-                self._fi.write(testin_frame.to_bytes(length=8, byteorder="big"))
-
-        if self._work_dir:
-            self._fc.close()
-            self._fi.close()
-            self._fo.close()
+        if isinstance(work_dir, Path):
+            with open(work_dir / "config.bin", "wb") as fc, open(
+                work_dir / "testin.bin", "wb"
+            ) as fi, open(work_dir / "testout.bin", "wb") as fo:
+                for cf_frame, to_frame, ti_frame in zip(cf_list, to_list, ti_list):
+                    fc.write(cf_frame.to_bytes(length=8, byteorder="big"))
+                    fo.write(to_frame.to_bytes(length=8, byteorder="big"))
+                    fi.write(ti_frame.to_bytes(length=8, byteorder="big"))
 
         return tuple(cf_list), tuple(ti_list), tuple(to_list)
 
@@ -160,9 +145,9 @@ class paitest:
         self._ensure_cores(N)
 
         if save_dir:
-            self._ensure_dir(save_dir)
+            work_dir = self._ensure_dir(save_dir)
         else:
-            self._work_dir = None
+            work_dir = None
 
         # 1. Get the test chip coordinate.
         test_chip_coord = self._direction.value + self._fixed_chip_coord
@@ -181,11 +166,6 @@ class paitest:
         cf_list: List[int] = []
         ti_list: List[int] = []
         to_list: List[int] = []
-
-        if self._work_dir:
-            self._fc = open(self._work_dir / "config.bin", "wb")
-            self._fi = open(self._work_dir / "testin.bin", "wb")
-            self._fo = open(self._work_dir / "testout.bin", "wb")
 
         for i in range(N):
             logger.info(f"Generating test group #{i+1}/{N}...")
@@ -214,10 +194,6 @@ class paitest:
                     % (j + 1, testout_frame, i + 1, N)
                 )
 
-                if self._work_dir:
-                    self._fc.write(config_frame.to_bytes(length=8, byteorder="big"))
-                    self._fo.write(testout_frame.to_bytes(length=8, byteorder="big"))
-
             testin_frame = FrameGen.GenTest2InFrame(
                 test_chip_coord, core_coord, self._fixed_core_star_coord
             )
@@ -226,8 +202,14 @@ class paitest:
                 "Test in frame  #1/1:  0x%x in group #%d/%d" % (testin_frame, i + 1, N)
             )
 
-            if self._work_dir:
-                self._fi.write(testin_frame.to_bytes(length=8, byteorder="big"))
+        if isinstance(work_dir, Path):
+            with open(work_dir / "config.bin", "wb") as fc, open(
+                work_dir / "testin.bin", "wb"
+            ) as fi, open(work_dir / "testout.bin", "wb") as fo:
+                for cf_frame, to_frame, ti_frame in zip(cf_list, to_list, ti_list):
+                    fc.write(cf_frame.to_bytes(length=8, byteorder="big"))
+                    fo.write(to_frame.to_bytes(length=8, byteorder="big"))
+                    fi.write(ti_frame.to_bytes(length=8, byteorder="big"))
 
         return tuple(cf_list), tuple(ti_list), tuple(to_list)
 
@@ -250,9 +232,9 @@ class paitest:
         self._ensure_cores(N)
 
         if save_dir:
-            self._ensure_dir(save_dir)
+            work_dir = self._ensure_dir(save_dir)
         else:
-            self._work_dir = None
+            work_dir = None
 
         # 1. Get the test chip coordinate.
         test_chip_coord = self._direction.value + self._fixed_chip_coord
@@ -271,11 +253,6 @@ class paitest:
         cf_list: List[int] = []
         ti_list: List[int] = []
         to_list: List[int] = []
-
-        if self._work_dir:
-            self._fc = open(self._work_dir / "config.bin", "wb")
-            self._fi = open(self._work_dir / "testin.bin", "wb")
-            self._fo = open(self._work_dir / "testout.bin", "wb")
 
         for i in range(N):
             logger.info(f"Generating test group #{i+1}/{N}...")
@@ -304,10 +281,6 @@ class paitest:
                     % (j + 1, testout_frame, i + 1, N)
                 )
 
-                if self._work_dir:
-                    self._fc.write(config_frame.to_bytes(length=8, byteorder="big"))
-                    self._fo.write(testout_frame.to_bytes(length=8, byteorder="big"))
-
             testin_frame = FrameGen.GenTest2InFrame(
                 test_chip_coord, core_coord, self._fixed_core_star_coord
             )
@@ -316,8 +289,14 @@ class paitest:
                 "Test in frame  #1/1:  0x%x in group #%d/%d" % (testin_frame, i + 1, N)
             )
 
-            if self._work_dir:
-                self._fi.write(testin_frame.to_bytes(length=8, byteorder="big"))
+        if isinstance(work_dir, Path):
+            with open(work_dir / "config.bin", "wb") as fc, open(
+                work_dir / "testin.bin", "wb"
+            ) as fi, open(work_dir / "testout.bin", "wb") as fo:
+                for cf_frame, to_frame, ti_frame in zip(cf_list, to_list, ti_list):
+                    fc.write(cf_frame.to_bytes(length=8, byteorder="big"))
+                    fo.write(to_frame.to_bytes(length=8, byteorder="big"))
+                    fi.write(ti_frame.to_bytes(length=8, byteorder="big"))
 
         return tuple(cf_list), tuple(ti_list), tuple(to_list)
 
@@ -326,6 +305,12 @@ class paitest:
         frames: Union[int, List[int], Tuple[int, ...]],
         new_core_coord: Optional[Tuple[int, int]] = None,
     ) -> Union[int, Tuple[int, ...]]:
+        """
+        Replace the core coordinate with the new one.
+
+        - frames: of which the core coordinate you want to replace. It can be a single frame, or a list or tuple.
+        - new_core_coord: The new core coordinate. If not specified, it will generate one randomly.
+        """
         if isinstance(frames, int):
             _frame = frames
         else:
@@ -333,6 +318,7 @@ class paitest:
 
         if isinstance(new_core_coord, Tuple):
             _new_core_coord = Coord(new_core_coord)
+            self._ensure_coord(_new_core_coord)
         else:
             # Auto mask the old core coordinate then random pick one
             old_core_addr = (
@@ -467,8 +453,7 @@ class paitest:
         new_core_coord: Coord,
     ) -> Tuple[int, ...]:
         """
-        Replace the core coordinate of frames with a specific or random one.
-        Indicate the core coordinate to specify it. Keep the parameters still.
+        Replace the core coordinate of frames with a specific or random one. Keep the parameters still.
         """
         mask = FM.GENERAL_MASK & (
             ~(FM.GENERAL_CORE_ADDR_MASK << FM.GENERAL_CORE_ADDR_OFFSET)
@@ -476,8 +461,8 @@ class paitest:
 
         new_core_addr = Coord2Addr(new_core_coord)
 
-        for frame in frames:
-            frame = (frame & mask) | (new_core_addr << FM.GENERAL_CORE_ADDR_OFFSET)
+        for i, frame in enumerate(frames):
+            frames[i] = (frame & mask) | (new_core_addr << FM.GENERAL_CORE_ADDR_OFFSET)
 
         return tuple(frames)
 
@@ -487,14 +472,14 @@ class paitest:
 
         return (frame & mask) | (header.value << FM.GENERAL_HEADER_OFFSET)
 
-    def _ensure_dir(self, user_dir: Union[str, Path]) -> None:
+    def _ensure_dir(self, user_dir: Union[str, Path]) -> Path:
         _user_dir: Path = Path(user_dir)
 
         if not _user_dir.exists():
             logger.warning(f"Creating directory {_user_dir}...")
             _user_dir.mkdir(parents=True, exist_ok=True)
 
-        self._work_dir = _user_dir
+        return _user_dir
 
     def _ensure_cores(self, Ncores: int) -> None:
         if Ncores > 1024 - 16 or Ncores < 1:
@@ -505,12 +490,18 @@ class paitest:
         def _ensure_direction(
             self, direction: Literal["EAST", "SOUTH", "WEST", "NORTH"]
         ) -> None:
-            self._direction = Direction[direction.upper()]
+            try:
+                self._direction = Direction[direction.upper()]
+            except KeyError:
+                raise KeyError(f"{direction} is an illegal direction!")
 
     else:
 
         def _ensure_direction(self, direction: str) -> None:
-            self._direction = Direction[direction.upper()]
+            try:
+                self._direction = Direction[direction.upper()]
+            except KeyError:
+                raise KeyError(f"{direction} is an illegal direction!")
 
     def _ensure_coord(self, coord: Coord) -> None:
         if coord >= Coord(0b11100, 0b11100):
