@@ -1,5 +1,6 @@
 from typing import Tuple, List, Optional, Union, overload
 import sys
+
 if sys.version_info >= (3, 8):
     from typing import Literal
 from pathlib import Path
@@ -17,7 +18,7 @@ class paitest:
             direction: str = "EAST",
             fixed_chip_coord: Tuple[int, int] = (0, 0),
         ) -> None: ...
-    
+
     def Get1GroupForNCoresWithNParams(
         self,
         N: int,

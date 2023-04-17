@@ -291,7 +291,7 @@ class paitest:
     def ReplaceCoreCoord(
         self,
         frames: Union[int, List[int], Tuple[int, ...]],
-        new_core_coord: Optional[Tuple[int, int]] = None,
+        new_core_coord: Optional[Union[Tuple[int, int], Coord]] = None,
     ) -> Union[int, Tuple[int, ...]]:
         """
         Replace the core coordinate with the new one.
@@ -306,6 +306,9 @@ class paitest:
 
         if isinstance(new_core_coord, Tuple):
             _new_core_coord = Coord(new_core_coord)
+            self._ensure_coord(_new_core_coord)
+        elif isinstance(new_core_coord, Coord):
+            _new_core_coord = new_core_coord
             self._ensure_coord(_new_core_coord)
         else:
             # Auto mask the old core coordinate then random pick one

@@ -5,6 +5,7 @@ from .frame_params import (
     ConfigFrameMask as CFM,
 )
 from .frame_params import *
+from .coord import Coord
 from typing import List, Tuple, Union, Dict, Optional, Any
 import random
 
@@ -243,7 +244,7 @@ class FrameDecoder:
             self._frame >> FM.GENERAL_HEADER_OFFSET
         ) & FM.GENERAL_HEADER_MASK
         try:
-            _subtype = FrameSubType(_header)
+            _subtype = FST(_header)
             return _subtype
         except:
             raise TypeError(f"Frame header {_header} is illigal!")
@@ -314,22 +315,22 @@ class FrameDecoder:
 
         self._info(subtype)
 
-    def _decode_config1(self):
+    def _decode_config1(self) -> None:
         pass
 
     def _decode_config2(self) -> None:
         self._param_reg_parse()
 
-    def _decode_testout1(self):
+    def _decode_testout1(self) -> None:
         pass
 
-    def _decode_testout2(self):
+    def _decode_testout2(self) -> None:
         pass
 
-    def _decode_testin1(self):
+    def _decode_testin1(self) -> None:
         pass
 
-    def _decode_testin2(self):
+    def _decode_testin2(self) -> None:
         pass
 
     def _info(self, subtype: FST) -> None:
