@@ -1,4 +1,4 @@
-from typing import Tuple, List, Optional, Union, overload
+from typing import Tuple, List, Optional, Union
 import sys
 
 if sys.version_info >= (3, 8):
@@ -24,39 +24,33 @@ class paitest:
         N: int,
         *,
         save_dir: Optional[Union[str, Path]] = None,
-        masked_core_coord: Optional[Tuple[int, int]] = None
+        masked_core_coord: Optional[Tuple[int, int]] = None,
+        verbose: bool = False
     ) -> Tuple[Tuple[int, ...], ...]: ...
     def Get1GroupForNCoresWith1Param(
         self,
         N: int,
         *,
         save_dir: Optional[Union[str, Path]] = None,
-        masked_core_coord: Optional[Tuple[int, int]] = None
+        masked_core_coord: Optional[Tuple[int, int]] = None,
+        verbose: bool = False
     ) -> Tuple[Tuple[int, ...], ...]: ...
     def GetNGroupsFor1CoreWithNParams(
         self,
         N: int,
         *,
         save_dir: Optional[Union[str, Path]] = None,
-        masked_core_coord: Optional[Tuple[int, int]] = None
+        masked_core_coord: Optional[Tuple[int, int]] = None,
+        verbose: bool = False
     ) -> Tuple[Tuple[int, ...], ...]: ...
-    @overload
-    def ReplaceCoreCoord(self, frames: int) -> int: ...
-    @overload
-    def ReplaceCoreCoord(self, frames: List[int]) -> Tuple[int, ...]: ...
-    @overload
-    def ReplaceCoreCoord(self, frames: Tuple[int, ...]) -> Tuple[int, ...]: ...
-    @overload
-    def ReplaceCoreCoord(self, frames: int, new_core_coord: Tuple[int, int]) -> int: ...
-    @overload
     def ReplaceCoreCoord(
-        self, frames: List[int], new_core_coord: Tuple[int, int]
-    ) -> Tuple[int, ...]: ...
-    @overload
-    def ReplaceCoreCoord(
-        self, frames: Tuple[int, ...], new_core_coord: Tuple[int, int]
-    ) -> Tuple[int, ...]: ...
+        self,
+        frames: Union[int, List[int], Tuple[int, ...]],
+        new_core_coord: Tuple[int, int],
+    ) -> int: ...
     @staticmethod
     def SaveFrames(
-        save_path: Union[str, Path], frames: Union[int, List[int], Tuple[int, ...]]
+        save_path: Union[str, Path],
+        frames: Union[int, List[int], Tuple[int, ...]],
+        verbose: bool = False,
     ) -> None: ...

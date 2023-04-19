@@ -16,7 +16,7 @@ if __name__ == "__main__":
 
     # 1. Generate 1 group for N cores with N parameters reg.
     a_cf, a_ti, a_to = PAITestManager.Get1GroupForNCoresWithNParams(
-        3, save_dir="./test"
+        3, save_dir="./test", verbose=True
     )
     print(a_cf, a_ti, a_to)
 
@@ -37,7 +37,7 @@ if __name__ == "__main__":
     # Then, decode the replaced frames to check whether the replacement is OK
     decoder = FrameDecoder()
     attr = decoder.decode(a_cf_replaced)
-    
+
     replaced_coord = attr.get("core_coord")
     if replaced_coord == (9, 9):
         print("Replacement OK")

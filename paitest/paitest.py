@@ -44,6 +44,7 @@ class paitest:
         *,
         save_dir: Optional[Union[str, Path]] = None,
         masked_core_coord: Optional[Tuple[int, int]] = None,
+        verbose: bool = False,
     ) -> Tuple[Tuple[int, ...], ...]:
         """
         Generate 1 group(case) for 'N' random cores coordinates with 'N' different parameters.
@@ -51,6 +52,7 @@ class paitest:
         - `N`: How many cores coordinates under test.
         - `save_dir`: Where to save the frames files.
         - `masked_core_coord`: to avoid generating the specific core coordinate.
+        - `verbose`: whether to display log.
 
         :return: Three tuples including config, testin & testout tuples. 3*N frames in config & testout tuple and N frames in testin tuple.
         """
@@ -80,7 +82,8 @@ class paitest:
         to_list: List[int] = []
 
         for i in range(N):
-            logger.info(f"Generating test group #{i+1}/{N}...")
+            if verbose:
+                logger.info(f"Generating test group #{i+1}/{N}...")
             core_coord = core_coords[i]
             param = params[i]
 
@@ -92,33 +95,36 @@ class paitest:
                     self._fixed_core_star_coord,
                     param[j],
                 )
-                cf_list.append(config_frame)
-                logger.info(
-                    "Config frame   #%d/3:  0x%x in group #%d/%d"
-                    % (j + 1, config_frame, i + 1, N)
-                )
-
                 testout_frame = FrameGen.GenTest2OutFrame(
                     test_chip_coord, core_coord, self._fixed_core_star_coord, param[j]
                 )
+                cf_list.append(config_frame)
                 to_list.append(testout_frame)
-                logger.info(
-                    "Test out frame #%d/3:  0x%x in group #%d/%d"
-                    % (j + 1, testout_frame, i + 1, N)
-                )
+
+                if verbose:
+                    logger.info(
+                        "Config frame   #%d/3:  0x%x in group #%d/%d"
+                        % (j + 1, config_frame, i + 1, N)
+                    )
+                    logger.info(
+                        "Test out frame #%d/3:  0x%x in group #%d/%d"
+                        % (j + 1, testout_frame, i + 1, N)
+                    )
 
             testin_frame = FrameGen.GenTest2InFrame(
                 test_chip_coord, core_coord, self._fixed_core_star_coord
             )
             ti_list.append(testin_frame)
-            logger.info(
-                "Test in frame  #1/1:  0x%x in group #%d/%d" % (testin_frame, i + 1, N)
-            )
+            if verbose:
+                logger.info(
+                    "Test in frame  #1/1:  0x%x in group #%d/%d"
+                    % (testin_frame, i + 1, N)
+                )
 
         if isinstance(work_dir, Path):
-            self.SaveFrames(work_dir / "config.bin", cf_list)
-            self.SaveFrames(work_dir / "testin.bin", ti_list)
-            self.SaveFrames(work_dir / "testout.bin", to_list)
+            self.SaveFrames(work_dir / "config.bin", cf_list, verbose)
+            self.SaveFrames(work_dir / "testin.bin", ti_list, verbose)
+            self.SaveFrames(work_dir / "testout.bin", to_list, verbose)
 
         return tuple(cf_list), tuple(ti_list), tuple(to_list)
 
@@ -128,6 +134,7 @@ class paitest:
         *,
         save_dir: Optional[Union[str, Path]] = None,
         masked_core_coord: Optional[Tuple[int, int]] = None,
+        verbose: bool = False,
     ) -> Tuple[Tuple[int, ...], ...]:
         """
         Generate 1 group(case) for 'N' random cores coordinates with the same parameters.
@@ -135,6 +142,7 @@ class paitest:
         - `N`: How many cores coordinates under test.
         - `save_dir`: Where to save the frames files.
         - `masked_core_coord`: to avoid generating the specific core coordinate.
+        - `verbose`: whether to display log.
 
         :return: Three tuples including config, testin & testout tuples. 3*N frames in config & testout tuple and N frames in testin tuple.
         """
@@ -164,7 +172,8 @@ class paitest:
         to_list: List[int] = []
 
         for i in range(N):
-            logger.info(f"Generating test group #{i+1}/{N}...")
+            if verbose:
+                logger.info(f"Generating test group #{i+1}/{N}...")
             core_coord = core_coords[i]
 
             for j in range(3):
@@ -175,33 +184,37 @@ class paitest:
                     self._fixed_core_star_coord,
                     param[j],
                 )
-                cf_list.append(config_frame)
-                logger.info(
-                    "Config frame   #%d/3:  0x%x in group #%d/%d"
-                    % (j + 1, config_frame, i + 1, N)
-                )
-
                 testout_frame = FrameGen.GenTest2OutFrame(
                     test_chip_coord, core_coord, self._fixed_core_star_coord, param[j]
                 )
+                cf_list.append(config_frame)
                 to_list.append(testout_frame)
-                logger.info(
-                    "Test out frame #%d/3:  0x%x in group #%d/%d"
-                    % (j + 1, testout_frame, i + 1, N)
-                )
+
+                if verbose:
+                    logger.info(
+                        "Config frame   #%d/3:  0x%x in group #%d/%d"
+                        % (j + 1, config_frame, i + 1, N)
+                    )
+                    logger.info(
+                        "Test out frame #%d/3:  0x%x in group #%d/%d"
+                        % (j + 1, testout_frame, i + 1, N)
+                    )
 
             testin_frame = FrameGen.GenTest2InFrame(
                 test_chip_coord, core_coord, self._fixed_core_star_coord
             )
             ti_list.append(testin_frame)
-            logger.info(
-                "Test in frame  #1/1:  0x%x in group #%d/%d" % (testin_frame, i + 1, N)
-            )
+
+            if verbose:
+                logger.info(
+                    "Test in frame  #1/1:  0x%x in group #%d/%d"
+                    % (testin_frame, i + 1, N)
+                )
 
         if isinstance(work_dir, Path):
-            self.SaveFrames(work_dir / "config.bin", cf_list)
-            self.SaveFrames(work_dir / "testin.bin", ti_list)
-            self.SaveFrames(work_dir / "testout.bin", to_list)
+            self.SaveFrames(work_dir / "config.bin", cf_list, verbose)
+            self.SaveFrames(work_dir / "testin.bin", ti_list, verbose)
+            self.SaveFrames(work_dir / "testout.bin", to_list, verbose)
 
         return tuple(cf_list), tuple(ti_list), tuple(to_list)
 
@@ -211,6 +224,7 @@ class paitest:
         *,
         save_dir: Optional[Union[str, Path]] = None,
         masked_core_coord: Optional[Tuple[int, int]] = None,
+        verbose: bool = False,
     ) -> Tuple[Tuple[int, ...], ...]:
         """
         Generate 'N' groups(cases) for 1 random core coordinate with 'N' different parameters.
@@ -247,7 +261,8 @@ class paitest:
         to_list: List[int] = []
 
         for i in range(N):
-            logger.info(f"Generating test group #{i+1}/{N}...")
+            if verbose:
+                logger.info(f"Generating test group #{i+1}/{N}...")
             param = params[i]
 
             for j in range(3):
@@ -258,33 +273,37 @@ class paitest:
                     self._fixed_core_star_coord,
                     param[j],
                 )
-                cf_list.append(config_frame)
-                logger.info(
-                    "Config frame   #%d/3:  0x%x in group #%d/%d"
-                    % (j + 1, config_frame, i + 1, N)
-                )
-
                 testout_frame = FrameGen.GenTest2OutFrame(
                     test_chip_coord, core_coord, self._fixed_core_star_coord, param[j]
                 )
+                cf_list.append(config_frame)
                 to_list.append(testout_frame)
-                logger.info(
-                    "Test out frame #%d/3:  0x%x in group #%d/%d"
-                    % (j + 1, testout_frame, i + 1, N)
-                )
+
+                if verbose:
+                    logger.info(
+                        "Config frame   #%d/3:  0x%x in group #%d/%d"
+                        % (j + 1, config_frame, i + 1, N)
+                    )
+                    logger.info(
+                        "Test out frame #%d/3:  0x%x in group #%d/%d"
+                        % (j + 1, testout_frame, i + 1, N)
+                    )
 
             testin_frame = FrameGen.GenTest2InFrame(
                 test_chip_coord, core_coord, self._fixed_core_star_coord
             )
             ti_list.append(testin_frame)
-            logger.info(
-                "Test in frame  #1/1:  0x%x in group #%d/%d" % (testin_frame, i + 1, N)
-            )
+
+            if verbose:
+                logger.info(
+                    "Test in frame  #1/1:  0x%x in group #%d/%d"
+                    % (testin_frame, i + 1, N)
+                )
 
         if isinstance(work_dir, Path):
-            self.SaveFrames(work_dir / "config.bin", cf_list)
-            self.SaveFrames(work_dir / "testin.bin", ti_list)
-            self.SaveFrames(work_dir / "testout.bin", to_list)
+            self.SaveFrames(work_dir / "config.bin", cf_list, verbose)
+            self.SaveFrames(work_dir / "testin.bin", ti_list, verbose)
+            self.SaveFrames(work_dir / "testout.bin", to_list, verbose)
 
         return tuple(cf_list), tuple(ti_list), tuple(to_list)
 
@@ -326,14 +345,16 @@ class paitest:
 
     @staticmethod
     def SaveFrames(
-        save_path: Union[str, Path], frames: Union[int, List[int], Tuple[int, ...]]
+        save_path: Union[str, Path],
+        frames: Union[int, List[int], Tuple[int, ...]],
+        verbose: bool = False,
     ) -> None:
         """Write frames into specific binary file. Must be '.bin' suffix."""
 
         _path = Path(save_path)
 
         if not _path.suffix == ".bin":
-            raise ValueError
+            raise ValueError(f"Only support .bin file: {_path}")
 
         with open(_path, "wb") as f:
             if isinstance(frames, int):
@@ -341,6 +362,9 @@ class paitest:
             else:
                 for frame in frames:
                     f.write(frame.to_bytes(8, "big"))
+
+            if verbose:
+                logger.info(f"Saved frame(s) into {_path} OK")
 
     def _Get1CoreCoord(self, masked_coord: Optional[Coord] = None) -> Coord:
         """
