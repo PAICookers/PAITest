@@ -112,9 +112,10 @@ class paitest:
                     )
 
             testin_frame = FrameGen.GenTest2InFrame(
-                test_chip_coord, core_coord, self._fixed_core_star_coord
+                self._fixed_chip_coord, core_coord, self._fixed_core_star_coord
             )
             ti_list.append(testin_frame)
+            
             if verbose:
                 logger.info(
                     "Test in frame  #1/1:  0x%x in group #%d/%d"
@@ -165,7 +166,7 @@ class paitest:
         core_coords = self._GetNCoresCoord(N, _masked_core_coord)
 
         # 3. Get the parameters reg.
-        param: List[int] = self._Get1Param(core_coords, False)
+        param: Tuple[int, ...] = self._Get1Param(core_coords, False)
 
         cf_list: List[int] = []
         ti_list: List[int] = []
@@ -201,7 +202,7 @@ class paitest:
                     )
 
             testin_frame = FrameGen.GenTest2InFrame(
-                test_chip_coord, core_coord, self._fixed_core_star_coord
+                self._fixed_chip_coord, core_coord, self._fixed_core_star_coord
             )
             ti_list.append(testin_frame)
 
@@ -290,7 +291,7 @@ class paitest:
                     )
 
             testin_frame = FrameGen.GenTest2InFrame(
-                test_chip_coord, core_coord, self._fixed_core_star_coord
+                self._fixed_chip_coord, core_coord, self._fixed_core_star_coord
             )
             ti_list.append(testin_frame)
 
@@ -407,7 +408,7 @@ class paitest:
 
     def _Get1Param(
         self, core_coords: Union[List[Coord], Coord], is_legal: bool = False
-    ) -> List[int]:
+    ) -> Tuple[int, ...]:
         """Generate one group parameter for parameter register"""
         return self._GetNParams(1, core_coords, is_legal)[0]
 
@@ -416,7 +417,7 @@ class paitest:
         N: int,
         core_coords: Union[List[Coord], Coord],
         is_legal: bool = False,
-    ) -> List[List[int]]:
+    ) -> List[Tuple[int, ...]]:
         """
         Generate 'N' parameters reg for parameter register.
         - `is_legal`: whether to generate legal parameters for every core
@@ -429,8 +430,7 @@ class paitest:
                 for core_coord in _core_coords:
                     if is_legal:
                         # TODO: Do legal generation here, including direction config
-                        param = [0, 0, 0]
-                        pass
+                        raise NotImplementedError
                     else:
                         param = FrameGen.GenConfigGroup(
                             FST.CONFIG_TYPE2,

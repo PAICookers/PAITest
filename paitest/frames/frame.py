@@ -79,9 +79,8 @@ class FrameGen:
         core_coord: Coord,
         core_star_coord: Coord,
         test_chip_coord: Coord,
-    ) -> List[int]:
+    ) -> Tuple[int, ...]:
         ConfigFrameGroup: List[int] = []
-
         param_reg = FrameGen._GenParamReg(test_chip_coord)
 
         for i in range(3):
@@ -91,7 +90,7 @@ class FrameGen:
                 )
             )
 
-        return ConfigFrameGroup
+        return tuple(ConfigFrameGroup)
 
     @staticmethod
     def _GenParamReg(
@@ -109,7 +108,7 @@ class FrameGen:
         tick_wait_end: Optional[int] = None,
         snn_en: Optional[bool] = None,
         target_lcn: Optional[int] = None,
-    ) -> List[int]:
+    ) -> Tuple[int, ...]:
         high3, low7 = test_chip_coord_split(test_chip_coord)
 
         param_reg: List[int] = []
@@ -128,7 +127,7 @@ class FrameGen:
         else:
             pass
 
-        return param_reg
+        return tuple(param_reg)
 
     """Functions of Test Frames Generation"""
 
@@ -190,7 +189,7 @@ class FrameGen:
 class FrameDecoder:
     """Frame decoder"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.groups_len: int
         self._frame: int
         self._frames_group: Tuple[int, ...]
