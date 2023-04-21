@@ -6,7 +6,7 @@
 
 ## 📦 版本
 
-[v0.0.12 Prerelease](https://github.com/PAICookers/PAITest/releases/tag/v0.0.12)
+[v1.0.0](https://github.com/PAICookers/PAITest/releases/tag/v1.0.0)
 
 ## 🛠️ 使用生成
 
@@ -65,6 +65,6 @@
 
 ## 🗓️ TODO
 
-- [ ] 上板验证
+- [X] 上板验证
 - [ ] 参数检验
 - [ ] 配置/测试帧III/IV型
