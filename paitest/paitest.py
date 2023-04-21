@@ -115,7 +115,7 @@ class paitest:
                 self._fixed_chip_coord, core_coord, self._fixed_core_star_coord
             )
             ti_list.append(testin_frame)
-            
+
             if verbose:
                 logger.info(
                     "Test in frame  #1/1:  0x%x in group #%d/%d"
@@ -419,7 +419,7 @@ class paitest:
         is_legal: bool = False,
     ) -> List[Tuple[int, ...]]:
         """
-        Generate 'N' parameters reg for parameter register.
+        Generate 'N' random parameters register.
         - `is_legal`: whether to generate legal parameters for every core
         """
 
