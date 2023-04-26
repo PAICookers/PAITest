@@ -14,19 +14,19 @@ if __name__ == "__main__":
     # PAITest instance
     PAITestManager = paitest("EAST")
 
-    # 1. Generate 1 group for N cores with N parameters reg.
+    # 1. Generate 1 group for N cores with N **different** parameters reg.
     a_cf, a_ti, a_to = PAITestManager.Get1GroupForNCoresWithNParams(
-        3, save_dir="./test", verbose=True
+        3, save_dir="./test", verbose=True  # Turn on the verbose mode
     )
     print(a_cf, a_ti, a_to)
 
-    # 2. Generate 1 group for N cores with the same 1 parameter reg.
+    # 2. Generate 1 group for N cores with the **same** parameter reg.
     a_cf, a_ti, a_to = PAITestManager.Get1GroupForNCoresWith1Param(1, save_dir="./test")
     print(a_cf, a_ti, a_to)
 
-    # 3. Generate N groups for 1 core with N parameters reg.
+    # 3. Generate N groups for 1 core with N **different** parameters reg.
     a_cf, a_fi, a_fo = PAITestManager.GetNGroupsFor1CoreWithNParams(
-        3, save_dir="./test1"
+        3, save_dir="./test1", gen_txt=True  # Can save into .txt file as well
     )
 
     # 3. Replace the core coordinate with (9, 9) then save in test/config_r.bin

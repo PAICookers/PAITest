@@ -25,6 +25,7 @@ class paitest:
         *,
         save_dir: Optional[Union[str, Path]] = None,
         masked_core_coord: Optional[Tuple[int, int]] = None,
+        gen_txt: bool = False,
         verbose: bool = False
     ) -> Tuple[Tuple[int, ...], ...]: ...
     def Get1GroupForNCoresWith1Param(
@@ -33,6 +34,7 @@ class paitest:
         *,
         save_dir: Optional[Union[str, Path]] = None,
         masked_core_coord: Optional[Tuple[int, int]] = None,
+        gen_txt: bool = False,
         verbose: bool = False
     ) -> Tuple[Tuple[int, ...], ...]: ...
     def GetNGroupsFor1CoreWithNParams(
@@ -41,6 +43,7 @@ class paitest:
         *,
         save_dir: Optional[Union[str, Path]] = None,
         masked_core_coord: Optional[Tuple[int, int]] = None,
+        gen_txt: bool = False,
         verbose: bool = False
     ) -> Tuple[Tuple[int, ...], ...]: ...
     def ReplaceCoreCoord(
