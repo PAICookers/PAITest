@@ -1,8 +1,9 @@
-from typing import Tuple, List, Optional, Union
 import sys
+from typing import List, Optional, Tuple, Union
 
 if sys.version_info >= (3, 8):
     from typing import Literal
+
 from pathlib import Path
 
 class paitest:
@@ -25,6 +26,7 @@ class paitest:
         *,
         save_dir: Optional[Union[str, Path]] = None,
         masked_core_coord: Optional[Tuple[int, int]] = None,
+        gen_txt: bool = False,
         verbose: bool = False
     ) -> Tuple[Tuple[int, ...], ...]: ...
     def Get1GroupForNCoresWith1Param(
@@ -33,6 +35,7 @@ class paitest:
         *,
         save_dir: Optional[Union[str, Path]] = None,
         masked_core_coord: Optional[Tuple[int, int]] = None,
+        gen_txt: bool = False,
         verbose: bool = False
     ) -> Tuple[Tuple[int, ...], ...]: ...
     def GetNGroupsFor1CoreWithNParams(
@@ -41,6 +44,7 @@ class paitest:
         *,
         save_dir: Optional[Union[str, Path]] = None,
         masked_core_coord: Optional[Tuple[int, int]] = None,
+        gen_txt: bool = False,
         verbose: bool = False
     ) -> Tuple[Tuple[int, ...], ...]: ...
     def ReplaceCoreCoord(

@@ -1,4 +1,5 @@
-from enum import Flag, Enum, unique
+from enum import Enum, Flag, unique
+
 from .coord import CoordOffset
 
 

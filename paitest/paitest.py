@@ -1,16 +1,11 @@
-from .frames import (
-    Addr2Coord,
-    Coord2Addr,
-    Coord,
-    FrameGen,
-    Direction,
-    FrameMask as FM,
-    FrameSubType as FST,
-)
-from pathlib import Path
-from typing import List, Union, Tuple, Optional
 import random
 import sys
+from pathlib import Path
+from typing import List, Optional, Tuple, Union
+
+from .frames import Addr2Coord, Coord, Coord2Addr, Direction, FrameGen
+from .frames import FrameMask as FM
+from .frames import FrameSubType as FST
 from .log import logger
 
 if sys.version_info >= (3, 8):
@@ -36,7 +31,7 @@ class paitest:
         self._fixed_core_star_coord: Coord = Coord(0, 0)
         self._test_chip_coord: Coord
 
-        self._ensure_direction(direction)  # type: ignore
+        self._ensure_direction(direction)
 
     def Get1GroupForNCoresWithNParams(
         self,
@@ -44,6 +39,7 @@ class paitest:
         *,
         save_dir: Optional[Union[str, Path]] = None,
         masked_core_coord: Optional[Tuple[int, int]] = None,
+        gen_txt: bool = False,
         verbose: bool = False,
     ) -> Tuple[Tuple[int, ...], ...]:
         """
@@ -52,9 +48,10 @@ class paitest:
         - `N`: How many cores coordinates under test.
         - `save_dir`: Where to save the frames files.
         - `masked_core_coord`: to avoid generating the specific core coordinate.
-        - `verbose`: whether to display log.
+        - `gen_txt`: to save frames into text files instead of default binary files.
+        - `verbose`: whether to display the log.
 
-        :return: Three tuples including config, testin & testout tuples. 3*N frames in config & testout tuple and N frames in testin tuple.
+        :return: 3 tuples including config, testin & testout tuples. 3*N frames in config & testout tuple and N frames in testin tuple.
         """
         self._ensure_cores(N)
 
@@ -123,9 +120,10 @@ class paitest:
                 )
 
         if isinstance(work_dir, Path):
-            self.SaveFrames(work_dir / "config.bin", cf_list, verbose)
-            self.SaveFrames(work_dir / "testin.bin", ti_list, verbose)
-            self.SaveFrames(work_dir / "testout.bin", to_list, verbose)
+            _suffix = ".txt" if gen_txt else ".bin"
+            self.SaveFrames(work_dir / ("config" + _suffix), cf_list, verbose)
+            self.SaveFrames(work_dir / ("testin" + _suffix), ti_list, verbose)
+            self.SaveFrames(work_dir / ("testout" + _suffix), to_list, verbose)
 
         return tuple(cf_list), tuple(ti_list), tuple(to_list)
 
@@ -135,6 +133,7 @@ class paitest:
         *,
         save_dir: Optional[Union[str, Path]] = None,
         masked_core_coord: Optional[Tuple[int, int]] = None,
+        gen_txt: bool = False,
         verbose: bool = False,
     ) -> Tuple[Tuple[int, ...], ...]:
         """
@@ -143,9 +142,10 @@ class paitest:
         - `N`: How many cores coordinates under test.
         - `save_dir`: Where to save the frames files.
         - `masked_core_coord`: to avoid generating the specific core coordinate.
-        - `verbose`: whether to display log.
+        - `gen_txt`: to save frames into text files instead of default binary files.
+        - `verbose`: whether to display the log.
 
-        :return: Three tuples including config, testin & testout tuples. 3*N frames in config & testout tuple and N frames in testin tuple.
+        :return: 3 tuples including config, testin & testout tuples. 3*N frames in config & testout tuple and N frames in testin tuple.
         """
         self._ensure_cores(N)
 
@@ -213,9 +213,10 @@ class paitest:
                 )
 
         if isinstance(work_dir, Path):
-            self.SaveFrames(work_dir / "config.bin", cf_list, verbose)
-            self.SaveFrames(work_dir / "testin.bin", ti_list, verbose)
-            self.SaveFrames(work_dir / "testout.bin", to_list, verbose)
+            _suffix = ".txt" if gen_txt else ".bin"
+            self.SaveFrames(work_dir / ("config" + _suffix), cf_list, verbose)
+            self.SaveFrames(work_dir / ("testin" + _suffix), ti_list, verbose)
+            self.SaveFrames(work_dir / ("testout" + _suffix), to_list, verbose)
 
         return tuple(cf_list), tuple(ti_list), tuple(to_list)
 
@@ -225,6 +226,7 @@ class paitest:
         *,
         save_dir: Optional[Union[str, Path]] = None,
         masked_core_coord: Optional[Tuple[int, int]] = None,
+        gen_txt: bool = False,
         verbose: bool = False,
     ) -> Tuple[Tuple[int, ...], ...]:
         """
@@ -233,8 +235,10 @@ class paitest:
         - `N`: How many test groups(cases) of 1 core will be generated.
         - `save_dir`: Where to save the frames files.
         - `masked_core_coord`: to avoid generating the specific core coordinate.
+        - `gen_txt`: to save frames into text files instead of default binary files.
+        - `verbose`: whether to display the log.
 
-        :return: Three tuples including config, testin & testout tuples. 3*N frames in config & testout tuple and N frames in testin tuple.
+        :return: 3 tuples including config, testin & testout tuples. 3*N frames in config & testout tuple and N frames in testin tuple.
         """
         self._ensure_cores(N)
 
@@ -302,9 +306,10 @@ class paitest:
                 )
 
         if isinstance(work_dir, Path):
-            self.SaveFrames(work_dir / "config.bin", cf_list, verbose)
-            self.SaveFrames(work_dir / "testin.bin", ti_list, verbose)
-            self.SaveFrames(work_dir / "testout.bin", to_list, verbose)
+            _suffix = ".txt" if gen_txt else ".bin"
+            self.SaveFrames(work_dir / ("config" + _suffix), cf_list, verbose)
+            self.SaveFrames(work_dir / ("testin" + _suffix), ti_list, verbose)
+            self.SaveFrames(work_dir / ("testout" + _suffix), to_list, verbose)
 
         return tuple(cf_list), tuple(ti_list), tuple(to_list)
 
@@ -350,22 +355,43 @@ class paitest:
         frames: Union[int, List[int], Tuple[int, ...]],
         verbose: bool = False,
     ) -> None:
-        """Write frames into specific binary file. Must be '.bin' suffix."""
+        """
+        Write frames into specific binary file. Files with '.bin' suffix is recommended
+
+        Support .txt files as well.
+
+        - gen_txt: Wether to generate txt files.
+        """
 
         _path = Path(save_path)
+        _suffix: str = _path.suffix
 
-        if not _path.suffix == ".bin":
-            raise ValueError(f"Only support .bin file: {_path}")
+        if _suffix != ".bin" and _suffix != ".txt":
+            raise NotImplementedError(
+                f"File with suffix {_suffix} is not supported!")
 
-        with open(_path, "wb") as f:
-            if isinstance(frames, int):
-                f.write(frames.to_bytes(8, "big"))
-            else:
-                for frame in frames:
-                    f.write(frame.to_bytes(8, "big"))
+        if _suffix == ".bin":
+            with open(_path, "wb") as f:
+                if isinstance(frames, int):
+                    f.write(frames.to_bytes(8, "big"))
+                else:
+                    for frame in frames:
+                        f.write(frame.to_bytes(8, "big"))
 
-            if verbose:
-                logger.info(f"Saved frame(s) into {_path} OK")
+        else:
+            with open(_path, "w") as f:  # Open with "w"
+                if isinstance(frames, int):
+                    _str64 = bin(frames).split("0b")[1]
+                    _str64 = _str64.zfill(64)
+                    f.write(_str64 + "\n")
+                else:
+                    for frame in frames:
+                        _str64 = bin(frame).split("0b")[1]
+                        _str64 = _str64.zfill(64)
+                        f.write(_str64 + "\n")
+
+        if verbose:
+            logger.info(f"Saved frame(s) into {_path} OK")
 
     def _Get1CoreCoord(self, masked_coord: Optional[Coord] = None) -> Coord:
         """
@@ -477,13 +503,15 @@ class paitest:
         new_core_addr = Coord2Addr(new_core_coord)
 
         for i, frame in enumerate(frames):
-            frames[i] = (frame & mask) | (new_core_addr << FM.GENERAL_CORE_ADDR_OFFSET)
+            frames[i] = (frame & mask) | (
+                new_core_addr << FM.GENERAL_CORE_ADDR_OFFSET)
 
         return tuple(frames)
 
     def _ReplaceHeader(self, frame: int, header: FST) -> int:
         """Replace the header of a frame with the new one."""
-        mask = FM.GENERAL_MASK & (~(FM.GENERAL_HEADER_MASK << FM.GENERAL_HEADER_OFFSET))
+        mask = FM.GENERAL_MASK & (
+            ~(FM.GENERAL_HEADER_MASK << FM.GENERAL_HEADER_OFFSET))
 
         return (frame & mask) | (header.value << FM.GENERAL_HEADER_OFFSET)
 
@@ -520,6 +548,7 @@ class paitest:
 
     def _ensure_coord(self, coord: Coord) -> None:
         if coord >= Coord(0b11100, 0b11100):
-            raise ValueError("Address coordinate must: 0 <= x < 28 or 0 <= y < 28")
+            raise ValueError(
+                "Address coordinate must: 0 <= x < 28 or 0 <= y < 28")
 
         self._masked_core_coord = coord
