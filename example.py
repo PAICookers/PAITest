@@ -1,7 +1,6 @@
 from paitest import paitest
 from paitest.frames import FrameDecoder
 
-
 if __name__ == "__main__":
     """Here are simple exmaples"""
 
@@ -21,7 +20,8 @@ if __name__ == "__main__":
     print(a_cf, a_ti, a_to)
 
     # 2. Generate 1 group for N cores with the **same** parameter reg.
-    a_cf, a_ti, a_to = PAITestManager.Get1GroupForNCoresWith1Param(1, save_dir="./test")
+    a_cf, a_ti, a_to = PAITestManager.Get1GroupForNCoresWith1Param(
+        1, save_dir="./test")
     print(a_cf, a_ti, a_to)
 
     # 3. Generate N groups for 1 core with N **different** parameters reg.

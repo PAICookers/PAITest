@@ -1,16 +1,11 @@
-from .frames import (
-    Addr2Coord,
-    Coord2Addr,
-    Coord,
-    FrameGen,
-    Direction,
-    FrameMask as FM,
-    FrameSubType as FST,
-)
-from pathlib import Path
-from typing import List, Union, Tuple, Optional
 import random
 import sys
+from pathlib import Path
+from typing import List, Optional, Tuple, Union
+
+from .frames import Addr2Coord, Coord, Coord2Addr, Direction, FrameGen
+from .frames import FrameMask as FM
+from .frames import FrameSubType as FST
 from .log import logger
 
 if sys.version_info >= (3, 8):
@@ -372,7 +367,8 @@ class paitest:
         _suffix: str = _path.suffix
 
         if _suffix != ".bin" and _suffix != ".txt":
-            raise NotImplementedError(f"File with suffix {_suffix} is not supported!")
+            raise NotImplementedError(
+                f"File with suffix {_suffix} is not supported!")
 
         if _suffix == ".bin":
             with open(_path, "wb") as f:
@@ -383,7 +379,7 @@ class paitest:
                         f.write(frame.to_bytes(8, "big"))
 
         else:
-            with open(_path, "w") as f: # Open with "w"
+            with open(_path, "w") as f:  # Open with "w"
                 if isinstance(frames, int):
                     _str64 = bin(frames).split("0b")[1]
                     _str64 = _str64.zfill(64)
@@ -507,13 +503,15 @@ class paitest:
         new_core_addr = Coord2Addr(new_core_coord)
 
         for i, frame in enumerate(frames):
-            frames[i] = (frame & mask) | (new_core_addr << FM.GENERAL_CORE_ADDR_OFFSET)
+            frames[i] = (frame & mask) | (
+                new_core_addr << FM.GENERAL_CORE_ADDR_OFFSET)
 
         return tuple(frames)
 
     def _ReplaceHeader(self, frame: int, header: FST) -> int:
         """Replace the header of a frame with the new one."""
-        mask = FM.GENERAL_MASK & (~(FM.GENERAL_HEADER_MASK << FM.GENERAL_HEADER_OFFSET))
+        mask = FM.GENERAL_MASK & (
+            ~(FM.GENERAL_HEADER_MASK << FM.GENERAL_HEADER_OFFSET))
 
         return (frame & mask) | (header.value << FM.GENERAL_HEADER_OFFSET)
 
@@ -550,6 +548,7 @@ class paitest:
 
     def _ensure_coord(self, coord: Coord) -> None:
         if coord >= Coord(0b11100, 0b11100):
-            raise ValueError("Address coordinate must: 0 <= x < 28 or 0 <= y < 28")
+            raise ValueError(
+                "Address coordinate must: 0 <= x < 28 or 0 <= y < 28")
 
         self._masked_core_coord = coord

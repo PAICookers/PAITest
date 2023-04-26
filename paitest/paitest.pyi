@@ -1,8 +1,9 @@
-from typing import Tuple, List, Optional, Union
 import sys
+from typing import List, Optional, Tuple, Union
 
 if sys.version_info >= (3, 8):
     from typing import Literal
+
 from pathlib import Path
 
 class paitest:
