@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "PAITest"
-version = "1.0.1"
+version = "1.1.0"
 description = "Test module for PAICORE 2.0"
 authors = ["KafCoppelia <k740677208@gmail.com>"]
 license = "AGPL v3.0"
