@@ -1,6 +1,5 @@
-from typing import Tuple, List, Optional, Union
-from pathlib import Path
 import sys
+from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
 if sys.version_info >= (3, 8):

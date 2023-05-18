@@ -12,7 +12,7 @@ if __name__ == "__main__":
         3, save_dir="./test", verbose=True  # Turn on the verbose mode
     )
     paitest.SaveFrames(
-        "./test/example_configframes.bin", a_cf, byteorder="big"    # Big-edian format
+        "./test/example_configframes.bin", a_cf, byteorder="big"  # Big-edian format
     )
     print(a_cf, a_ti, a_to)
 

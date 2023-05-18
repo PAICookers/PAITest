@@ -2,6 +2,7 @@ import random
 import sys
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
+
 from .frames import Addr2Coord, Coord, Coord2Addr, Direction, FrameGen
 from .frames import FrameMask as FM
 from .frames import FrameSubType as FST

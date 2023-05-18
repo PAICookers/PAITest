@@ -24,6 +24,7 @@
    # Define the direction of test chip
    PAITestManager = paitest("EAST")
    ```
+
 2. `Get1GroupForNCoresWithNParams`，产生一组针对 `N` 个核的配置-测试帧，每个核配置**不同参数**。可以指定单个需要**屏蔽**的核坐标
 
    ```python
@@ -39,18 +40,21 @@
    ```
 
    ⚠️ 指定 `verbose=True` 以开启日志显示，默认关闭
+
 3. `Get1GroupForNCoresWith1Param`，产生1组针对 `N` 个核的配置-测试帧，每个核配置**相同参数**。可以指定单个需要**屏蔽**的核坐标
 
    ```python
    # Same as Get1GroupForNCoresWithNParams
    cf, ti, to = PAITestManager.Get1GroupForNCoresWith1Param(10, save_dir="./test")
    ```
+
 4. `GetNGroupsFor1CoreWithNParams`，产生 `N` 组针对1个核的配置-测试帧，每个核配置**不同参数**。可以指定单个需要**屏蔽**的核坐标
 
    ```python
    # Same as Get1GroupForNCoresWithNParams
    cf, ti, to = PAITestManager.GetNGroupsFor1CoreWithNParams(1, save_dir="./test")
    ```
+
 5. `ReplaceCoreCoord`，替换**单个**或**一组**帧中的 `CORE_ADDR` 为指定坐标
 
    ```python
@@ -59,6 +63,7 @@
    ```
 
    ⚠️ 一组指一组完整的配置帧，包含3帧。对于测试输入帧，即为单帧。
+
 6. `SaveFrames`，保存帧数据至指定文件，支持 `.bin` 或 `.txt` 格式，支持指定大/小端输出
 
    ```python
@@ -73,6 +78,6 @@
 
 ## 🗓️ TODO
 
-- [X] 上板验证
+- [x] 上板验证
 - [ ] 参数检验
 - [ ] 配置/测试帧III/IV型
