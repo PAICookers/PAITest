@@ -3,8 +3,7 @@ name: Release Drafter
 on:
   push:
     branches:
-      - master
-      - dev
+      - main
 
   pull_request:
     types: [opened, reopened, synchronize]
@@ -22,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          ref: master
+          ref: main
 
       - name: Setup Poetry
         uses: Gr1N/setup-poetry@v8

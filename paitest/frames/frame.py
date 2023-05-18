@@ -116,11 +116,9 @@ class FrameGen:
             if not is_legal:
                 # Don't care 'tick_wait_start' split in #1 and #2
                 for _ in range(2):
-                    param_reg.append(random.randint(
-                        0, FM.GENERAL_PAYLOAD_MASK))
+                    param_reg.append(random.randint(0, FM.GENERAL_PAYLOAD_MASK))
 
-                param_reg[1] = (param_reg[1] & (
-                    ~CFM.TEST_CHIP_ADDR_HIGH3_MASK)) | high3
+                param_reg[1] = (param_reg[1] & (~CFM.TEST_CHIP_ADDR_HIGH3_MASK)) | high3
                 param_reg.append(low7 << CFM.TEST_CHIP_ADDR_LOW7_OFFSET)
             else:
                 # Do legal geenration
@@ -347,14 +345,12 @@ class FrameDecoder:
 
         chip_coord = self._get_chip_coord()
         print(
-            "#2  Chip coordinate:    [0x%02x | 0x%02x]" % (
-                chip_coord.x, chip_coord.y)
+            "#2  Chip coordinate:    [0x%02x | 0x%02x]" % (chip_coord.x, chip_coord.y)
         )
 
         core_coord = self._get_core_coord()
         print(
-            "#3  Core coordinate:    [0x%02x | 0x%02x]" % (
-                core_coord.x, core_coord.y)
+            "#3  Core coordinate:    [0x%02x | 0x%02x]" % (core_coord.x, core_coord.y)
         )
 
         core_star_coord = self._get_core_star_coord()
@@ -365,23 +361,16 @@ class FrameDecoder:
 
     def _config2_info(self) -> None:
         print("Info of parameter registers")
-        print("#1  Weight width:       0x%x" %
-              self._param_reg_dict["weight_width"])
+        print("#1  Weight width:       0x%x" % self._param_reg_dict["weight_width"])
         print("#2  LCN:                0x%x" % self._param_reg_dict["LCN"])
-        print("#3  Input width:        0x%x" %
-              self._param_reg_dict["input_width"])
-        print("#4  Spike width:        0x%x" %
-              self._param_reg_dict["spike_width"])
-        print("#5  Neuron num:         %d" %
-              self._param_reg_dict["neuron_num"])
+        print("#3  Input width:        0x%x" % self._param_reg_dict["input_width"])
+        print("#4  Spike width:        0x%x" % self._param_reg_dict["spike_width"])
+        print("#5  Neuron num:         %d" % self._param_reg_dict["neuron_num"])
         print("#6  Pool max enable:    %d" % self._param_reg_dict["pool_max"])
-        print("#7  Tick wait start:    0x%x" %
-              self._param_reg_dict["tick_wait_start"])
-        print("#8  Tick wait end:      0x%x" %
-              self._param_reg_dict["tick_wait_end"])
+        print("#7  Tick wait start:    0x%x" % self._param_reg_dict["tick_wait_start"])
+        print("#8  Tick wait end:      0x%x" % self._param_reg_dict["tick_wait_end"])
         print("#9  SNN enable:         %d" % self._param_reg_dict["SNN_EN"])
-        print("#10 Target LCN:         0x%x" %
-              self._param_reg_dict["target_LCN"])
+        print("#10 Target LCN:         0x%x" % self._param_reg_dict["target_LCN"])
 
         # type: ignore
         test_chip_coord: Coord = self._param_reg_dict["test_chip_coord"]
@@ -435,8 +424,7 @@ class FrameDecoder:
 
         high3 = self._frames_group[1] >> CFM.TEST_CHIP_ADDR_HIGH3_OFFSET
         low7 = self._frames_group[2] >> CFM.TEST_CHIP_ADDR_LOW7_OFFSET
-        self._param_reg_dict["test_chip_coord"] = test_chip_addr_combine(
-            high3, low7)
+        self._param_reg_dict["test_chip_coord"] = test_chip_addr_combine(high3, low7)
 
     def _decode_direction(self) -> Direction:
         # type: ignore

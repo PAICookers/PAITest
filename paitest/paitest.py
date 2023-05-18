@@ -12,9 +12,6 @@ if sys.version_info >= (3, 8):
     from typing import Literal
 
 
-__all__ = ["paitest"]
-
-
 class paitest:
     def __init__(
         self,
@@ -22,8 +19,9 @@ class paitest:
         fixed_chip_coord: Tuple[int, int] = (0, 0),
     ) -> None:
         """
-        :param direction: The direction relative to the PAICORE. Default is 'EAST'.
-        :param fixed_chip_coord: The chip address of the PAICORE under test. Default is (0, 0).
+        Params:
+        - direction: The direction relative to the PAICORE. Default is 'EAST'.
+        - fixed_chip_coord: The chip address of the PAICORE under test. Default is (0, 0).
         """
         self._verbose: bool = True
         self._fixed_chip_coord: Coord = Coord(fixed_chip_coord)
@@ -39,12 +37,12 @@ class paitest:
         *,
         save_dir: Optional[Union[str, Path]] = None,
         masked_core_coord: Optional[Tuple[int, int]] = None,
-        gen_txt: bool = False,
         verbose: bool = False,
     ) -> Tuple[Tuple[int, ...], ...]:
         """
         Generate 1 group(case) for 'N' random cores coordinates with 'N' different parameters.
 
+        Params:
         - `N`: How many cores coordinates under test.
         - `save_dir`: Where to save the frames files.
         - `masked_core_coord`: to avoid generating the specific core coordinate.
@@ -119,12 +117,6 @@ class paitest:
                     % (testin_frame, i + 1, N)
                 )
 
-        if isinstance(work_dir, Path):
-            _suffix = ".txt" if gen_txt else ".bin"
-            self.SaveFrames(work_dir / ("config" + _suffix), cf_list, verbose)
-            self.SaveFrames(work_dir / ("testin" + _suffix), ti_list, verbose)
-            self.SaveFrames(work_dir / ("testout" + _suffix), to_list, verbose)
-
         return tuple(cf_list), tuple(ti_list), tuple(to_list)
 
     def Get1GroupForNCoresWith1Param(
@@ -133,12 +125,12 @@ class paitest:
         *,
         save_dir: Optional[Union[str, Path]] = None,
         masked_core_coord: Optional[Tuple[int, int]] = None,
-        gen_txt: bool = False,
         verbose: bool = False,
     ) -> Tuple[Tuple[int, ...], ...]:
         """
         Generate 1 group(case) for 'N' random cores coordinates with the same parameters.
 
+        Params:
         - `N`: How many cores coordinates under test.
         - `save_dir`: Where to save the frames files.
         - `masked_core_coord`: to avoid generating the specific core coordinate.
@@ -212,12 +204,6 @@ class paitest:
                     % (testin_frame, i + 1, N)
                 )
 
-        if isinstance(work_dir, Path):
-            _suffix = ".txt" if gen_txt else ".bin"
-            self.SaveFrames(work_dir / ("config" + _suffix), cf_list, verbose)
-            self.SaveFrames(work_dir / ("testin" + _suffix), ti_list, verbose)
-            self.SaveFrames(work_dir / ("testout" + _suffix), to_list, verbose)
-
         return tuple(cf_list), tuple(ti_list), tuple(to_list)
 
     def GetNGroupsFor1CoreWithNParams(
@@ -226,12 +212,12 @@ class paitest:
         *,
         save_dir: Optional[Union[str, Path]] = None,
         masked_core_coord: Optional[Tuple[int, int]] = None,
-        gen_txt: bool = False,
         verbose: bool = False,
     ) -> Tuple[Tuple[int, ...], ...]:
         """
         Generate 'N' groups(cases) for 1 random core coordinate with 'N' different parameters.
 
+        Params:
         - `N`: How many test groups(cases) of 1 core will be generated.
         - `save_dir`: Where to save the frames files.
         - `masked_core_coord`: to avoid generating the specific core coordinate.
@@ -305,12 +291,6 @@ class paitest:
                     % (testin_frame, i + 1, N)
                 )
 
-        if isinstance(work_dir, Path):
-            _suffix = ".txt" if gen_txt else ".bin"
-            self.SaveFrames(work_dir / ("config" + _suffix), cf_list, verbose)
-            self.SaveFrames(work_dir / ("testin" + _suffix), ti_list, verbose)
-            self.SaveFrames(work_dir / ("testout" + _suffix), to_list, verbose)
-
         return tuple(cf_list), tuple(ti_list), tuple(to_list)
 
     def ReplaceCoreCoord(
@@ -321,8 +301,11 @@ class paitest:
         """
         Replace the core coordinate with the new one.
 
+        Params:
         - frames: of which the core coordinate you want to replace. It can be a single frame, or a list or tuple.
         - new_core_coord: The new core coordinate. If not specified, it will generate one randomly.
+
+        :return: the frame or frames after replacement.
         """
         if isinstance(frames, int):
             _frame = frames
@@ -353,32 +336,39 @@ class paitest:
     def SaveFrames(
         save_path: Union[str, Path],
         frames: Union[int, List[int], Tuple[int, ...]],
-        verbose: bool = False,
+        byteorder="big",
     ) -> None:
         """
-        Write frames into specific binary file. Files with '.bin' suffix is recommended
+        Write frames into specific text or binary file. Files with '.bin' suffix is recommended.
 
-        Support .txt files as well.
-
-        - gen_txt: Wether to generate txt files.
+        Params:
+        - save_path: The path of files.
+        - frames: A single frame or list or tuple of frames.
+        - byteorder: Big or little-edian format.
         """
 
         _path = Path(save_path)
         _suffix: str = _path.suffix
 
         if _suffix != ".bin" and _suffix != ".txt":
-            raise NotImplementedError(
-                f"File with suffix {_suffix} is not supported!")
+            raise NotImplementedError(f"File with suffix {_suffix} is not supported!")
+
+        assert byteorder in ["little", "big"]
 
         if _suffix == ".bin":
             with open(_path, "wb") as f:
                 if isinstance(frames, int):
-                    f.write(frames.to_bytes(8, "big"))
+                    f.write(frames.to_bytes(8, byteorder))
                 else:
                     for frame in frames:
-                        f.write(frame.to_bytes(8, "big"))
+                        f.write(frame.to_bytes(8, byteorder))
 
         else:
+            if byteorder == "little":
+                logger.warning(
+                    "Saving into txt file in little-edian format is not supported!"
+                )
+
             with open(_path, "w") as f:  # Open with "w"
                 if isinstance(frames, int):
                     _str64 = bin(frames).split("0b")[1]
@@ -390,8 +380,7 @@ class paitest:
                         _str64 = _str64.zfill(64)
                         f.write(_str64 + "\n")
 
-        if verbose:
-            logger.info(f"Saved frame(s) into {_path} OK")
+        logger.info(f"Saved frame(s) into {_path} OK")
 
     def _Get1CoreCoord(self, masked_coord: Optional[Coord] = None) -> Coord:
         """
@@ -446,6 +435,8 @@ class paitest:
     ) -> List[Tuple[int, ...]]:
         """
         Generate 'N' random parameters register.
+
+        Params:
         - `is_legal`: whether to generate legal parameters for every core
         """
 
@@ -503,15 +494,13 @@ class paitest:
         new_core_addr = Coord2Addr(new_core_coord)
 
         for i, frame in enumerate(frames):
-            frames[i] = (frame & mask) | (
-                new_core_addr << FM.GENERAL_CORE_ADDR_OFFSET)
+            frames[i] = (frame & mask) | (new_core_addr << FM.GENERAL_CORE_ADDR_OFFSET)
 
         return tuple(frames)
 
     def _ReplaceHeader(self, frame: int, header: FST) -> int:
         """Replace the header of a frame with the new one."""
-        mask = FM.GENERAL_MASK & (
-            ~(FM.GENERAL_HEADER_MASK << FM.GENERAL_HEADER_OFFSET))
+        mask = FM.GENERAL_MASK & (~(FM.GENERAL_HEADER_MASK << FM.GENERAL_HEADER_OFFSET))
 
         return (frame & mask) | (header.value << FM.GENERAL_HEADER_OFFSET)
 
@@ -525,30 +514,20 @@ class paitest:
         return _user_dir
 
     def _ensure_cores(self, Ncores: int) -> None:
+        """Parameter check: Ncores"""
         if Ncores > 1024 - 16 or Ncores < 1:
             raise ValueError("Range of Ncores is 0 < N < 1008")
 
-    if sys.version_info >= (3, 8):
-
-        def _ensure_direction(
-            self, direction: Literal["EAST", "SOUTH", "WEST", "NORTH"]
-        ) -> None:
-            try:
-                self._direction = Direction[direction.upper()]
-            except KeyError:
-                raise KeyError(f"{direction} is an illegal direction!")
-
-    else:
-
-        def _ensure_direction(self, direction: str) -> None:
-            try:
-                self._direction = Direction[direction.upper()]
-            except KeyError:
-                raise KeyError(f"{direction} is an illegal direction!")
+    def _ensure_direction(self, direction: str) -> None:
+        """Parameter check: direction"""
+        try:
+            self._direction = Direction[direction.upper()]
+        except KeyError:
+            raise KeyError(f"{direction} is an illegal direction!")
 
     def _ensure_coord(self, coord: Coord) -> None:
+        """Parameter check: coord"""
         if coord >= Coord(0b11100, 0b11100):
-            raise ValueError(
-                "Address coordinate must: 0 <= x < 28 or 0 <= y < 28")
+            raise ValueError("Address coordinate must: 0 <= x < 28 or 0 <= y < 28")
 
         self._masked_core_coord = coord

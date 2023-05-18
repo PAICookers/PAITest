@@ -6,9 +6,9 @@
 
 ## 📦 版本
 
-[v1.0.1](https://github.com/PAICookers/PAITest/releases/tag/v1.0.1)
+[v1.1.0](https://github.com/PAICookers/PAITest/releases/tag/v1.1.0)
 
-✨支持 `.txt` 格式输出
+✨支持大/小端格式输出
 
 ## 🛠️ 使用生成
 
@@ -39,7 +39,7 @@
        save_dir=save_to_dir, masked_core_coord=(12, 16), gen_txt=True)
    ```
 
-   ⚠️ 指定 `verbose=True` 以开启日志显示，默认关闭；指定 `gen_txt=True` 以保存至 `.txt`，默认保存至 `.bin`。
+   ⚠️ 指定 `verbose=True` 以开启日志显示，默认关闭
 
 3. `Get1GroupForNCoresWith1Param`，产生1组针对 `N` 个核的配置-测试帧，每个核配置**相同参数**。可以指定单个需要**屏蔽**的核坐标
 
@@ -64,15 +64,17 @@
 
    ⚠️ 一组指一组完整的配置帧，包含3帧。对于测试输入帧，即为单帧。
 
-6. `SaveFrames`，默认保存帧数据至指定文件，支持 `.bin` 或 `.txt` 格式
+6. `SaveFrames`，保存帧数据至指定文件，支持 `.bin` 或 `.txt` 格式，支持指定大/小端输出
 
    ```python
-   # Save into binary files
-   PAITestManager.SaveFrames("./test/config.bin", replaced)
+   # Save into binary files with big-edian format(default)
+   PAITestManager.SaveFrames("./test/config.bin", replaced, byteorder="big")
 
    # Or text files
    PAITestManager.SaveFrames("./test/config.txt", replaced)
    ```
+
+   ⚠️ 指定 `byteorder="big"/"little"` 以大/小端格式储存帧数据，默认大端
 
 ## 🗓️ TODO
 
