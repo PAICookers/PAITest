@@ -55,7 +55,7 @@ class paitest:
         def SaveFrames(
             save_path: Union[str, Path],
             frames: Union[int, List[int], Tuple[int, ...]],
-            byteorder: Literal["littele", "big"] = "big",
+            byteorder: Literal["little", "big"] = "big",
         ) -> None: ...
     else:
         @staticmethod

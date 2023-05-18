@@ -363,15 +363,18 @@ class paitest:
                         f.write(frame.to_bytes(8, byteorder))
 
         else:
+            if byteorder == "little":
+                logger.warning(
+                    "Saving into txt file in little-edian format is not supported!"
+                )
+
             with open(_path, "w") as f:  # Open with "w"
                 if isinstance(frames, int):
-                    frames = int.from_bytes(frames.to_bytes(8, byteorder), byteorder)
                     _str64 = bin(frames).split("0b")[1]
                     _str64 = _str64.zfill(64)
                     f.write(_str64 + "\n")
                 else:
                     for frame in frames:
-                        frame = int.from_bytes(frame.to_bytes(8, byteorder), byteorder)
                         _str64 = bin(frame).split("0b")[1]
                         _str64 = _str64.zfill(64)
                         f.write(_str64 + "\n")
