@@ -2,11 +2,11 @@ import random
 import sys
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
-
 from .frames import Addr2Coord, Coord, Coord2Addr, Direction, FrameGen
 from .frames import FrameMask as FM
 from .frames import FrameSubType as FST
 from .log import logger
+import warnings
 
 if sys.version_info >= (3, 8):
     from typing import Literal
@@ -17,11 +17,15 @@ class paitest:
         self,
         direction="EAST",
         fixed_chip_coord: Tuple[int, int] = (0, 0),
+        *,
+        test_chip_coord: Optional[Tuple[int, int]] = None,
     ) -> None:
         """
         Params:
         - direction: The direction relative to the PAICORE. Default is 'EAST'.
-        - fixed_chip_coord: The chip address of the PAICORE under test. Default is (0, 0).
+        - fixed_chip_coord: The chip address of the PAICORE under test.
+        - test_chip_coord: The address of the FPGA relative to the PAICORE.
+                           If you pass one, use this at high priority instead of 'direction'.
         """
         self._verbose: bool = True
         self._fixed_chip_coord: Coord = Coord(fixed_chip_coord)
@@ -29,7 +33,16 @@ class paitest:
         self._fixed_core_star_coord: Coord = Coord(0, 0)
         self._test_chip_coord: Coord
 
-        self._ensure_direction(direction)
+        if not isinstance(test_chip_coord, Tuple):
+            warnings.warn(
+                "Parameter 'direction' will be deprecated in the future version. Use 'test_chip_coord' instead.",
+                DeprecationWarning,
+            )
+
+            self._ensure_direction(direction)
+            self._test_chip_coord = self._direction.value + self._fixed_chip_coord
+        else:
+            self._test_chip_coord = Coord(test_chip_coord)
 
     def Get1GroupForNCoresWithNParams(
         self,
@@ -58,10 +71,7 @@ class paitest:
         else:
             work_dir = None
 
-        # 1. Get the test chip coordinate.
-        test_chip_coord: Coord = self._direction.value + self._fixed_chip_coord
-
-        # 2. Get N core coordinates list.
+        # 1. Get N core coordinates list.
         if isinstance(masked_core_coord, Tuple):
             _masked_core_coord = Coord(masked_core_coord)
         else:
@@ -69,7 +79,7 @@ class paitest:
 
         core_coords = self._GetNCoresCoord(N, _masked_core_coord)
 
-        # 3. Get N parameters reg.
+        # 2. Get N parameters reg.
         params = self._GetNParams(N, core_coords, False)
 
         cf_list: List[int] = []
@@ -91,7 +101,10 @@ class paitest:
                     param[j],
                 )
                 testout_frame = FrameGen.GenTest2OutFrame(
-                    test_chip_coord, core_coord, self._fixed_core_star_coord, param[j]
+                    self._test_chip_coord,
+                    core_coord,
+                    self._fixed_core_star_coord,
+                    param[j],
                 )
                 cf_list.append(config_frame)
                 to_list.append(testout_frame)
@@ -146,10 +159,7 @@ class paitest:
         else:
             work_dir = None
 
-        # 1. Get the test chip coordinate.
-        test_chip_coord = self._direction.value + self._fixed_chip_coord
-
-        # 2. Get N core coordinates list.
+        # 1. Get N core coordinates list.
         if isinstance(masked_core_coord, Tuple):
             _masked_core_coord = Coord(masked_core_coord)
         else:
@@ -157,7 +167,7 @@ class paitest:
 
         core_coords = self._GetNCoresCoord(N, _masked_core_coord)
 
-        # 3. Get the parameters reg.
+        # 2. Get the parameters reg.
         param: Tuple[int, ...] = self._Get1Param(core_coords, False)
 
         cf_list: List[int] = []
@@ -178,7 +188,10 @@ class paitest:
                     param[j],
                 )
                 testout_frame = FrameGen.GenTest2OutFrame(
-                    test_chip_coord, core_coord, self._fixed_core_star_coord, param[j]
+                    self._test_chip_coord,
+                    core_coord,
+                    self._fixed_core_star_coord,
+                    param[j],
                 )
                 cf_list.append(config_frame)
                 to_list.append(testout_frame)
@@ -233,10 +246,7 @@ class paitest:
         else:
             work_dir = None
 
-        # 1. Get the test chip coordinate.
-        test_chip_coord = self._direction.value + self._fixed_chip_coord
-
-        # 2. Get the core coordinates list.
+        # 1. Get the core coordinates list.
         if isinstance(masked_core_coord, Tuple):
             _masked_core_coord = Coord(masked_core_coord)
         else:
@@ -244,7 +254,7 @@ class paitest:
 
         core_coord = self._Get1CoreCoord(_masked_core_coord)
 
-        # 3. Get the parameters reg.
+        # 2. Get the parameters reg.
         params = self._GetNParams(N, core_coord, False)
 
         cf_list: List[int] = []
@@ -265,7 +275,10 @@ class paitest:
                     param[j],
                 )
                 testout_frame = FrameGen.GenTest2OutFrame(
-                    test_chip_coord, core_coord, self._fixed_core_star_coord, param[j]
+                    self._test_chip_coord,
+                    core_coord,
+                    self._fixed_core_star_coord,
+                    param[j],
                 )
                 cf_list.append(config_frame)
                 to_list.append(testout_frame)
@@ -358,10 +371,10 @@ class paitest:
         if _suffix == ".bin":
             with open(_path, "wb") as f:
                 if isinstance(frames, int):
-                    f.write(frames.to_bytes(8, byteorder))
+                    f.write(frames.to_bytes(8, byteorder))  # type: ignore
                 else:
                     for frame in frames:
-                        f.write(frame.to_bytes(8, byteorder))
+                        f.write(frame.to_bytes(8, byteorder))  # type: ignore
 
         else:
             if byteorder == "little":
@@ -441,8 +454,6 @@ class paitest:
         """
 
         def _ParamGenerator():
-            test_chip_coord: Coord = self._direction.value + self._fixed_chip_coord
-
             while True:
                 for core_coord in _core_coords:
                     if is_legal:
@@ -454,7 +465,7 @@ class paitest:
                             self._fixed_chip_coord,
                             core_coord,
                             self._fixed_core_star_coord,
-                            test_chip_coord,
+                            self._test_chip_coord,
                         )
 
                     yield param

@@ -2,7 +2,7 @@ from typing import Optional, Tuple, Union
 
 
 class Coord:
-    """Coordinate class"""
+    """Coordinates of cores"""
 
     def __init__(
         self, _x: Union[Tuple[int, int], int], _y: Optional[int] = None
@@ -22,7 +22,8 @@ class Coord:
         if not (0 <= x < 32 and 0 <= y < 32):
             raise ValueError(f"0 <= x < 32, 0 <= y < 32: ({x}, {y})")
 
-        self.x, self.y = x, y
+        self.x: int = x
+        self.y: int = y
 
     def __add__(self, other) -> "Coord":
         return Coord(self.x + other.x, self.y + other.y)
@@ -62,15 +63,16 @@ class Coord:
 
 
 class CoordOffset(Coord):
-    """Coordinate offset class"""
+    """Offset of coordinates"""
 
     def __init__(self, _x: int, _y: int) -> None:
         if not (-32 < _x < 32 and -32 < _y < 32):
             raise ValueError(f"-32 < x < 32, -32 < y < 32: ({_x}, {_y})")
 
-        self.x, self.y = _x, _y
+        self.x: int = _x
+        self.y: int = _y
 
-    def __add__(self, other):
+    def __add__(self, other) -> Union["CoordOffset", Coord]:
         if isinstance(other, CoordOffset):
             return CoordOffset(self.x + other.x, self.y + other.y)
         else:
