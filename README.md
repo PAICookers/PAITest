@@ -10,22 +10,21 @@
 
 ✨支持大/小端格式输出
 
-## 🛠️ 使用生成
+## 🛠️ 使用
 
 配置帧及对应测试输入帧，以实现硬件通路的简单测试，后续将芯片实际测试输出帧与预期结果进行对比即可。
 
 ⚠️ 由于配置帧/测试帧I型需要配合串口配置使用，因此目前仅采用**配置/测试帧II型**方案，且 `CHIP_ADDR` 与 `CORE*_ADDR` 均固定为 `(0, 0)`。
 
-1. 实例化 `PAITest`
+1. 实例化 `PAITest`。在这个版本下，参数 `test_chip_coord` 的优先级大于 `direction`；当仅配置 `dirction` 时通过此计算 `test_chip_coord`，否则使用 `test_chip_coord` 参数
 
    ```python
    from paitest import paitest
 
-   # Define the direction of test chip
-   PAITestManager = paitest("EAST")
+   # Set the address of chip under test and the test chip address.
+   PAITestManager = paitest("EAST", (0, 0), test_chip_coord=(1, 0))
    ```
-
-2. `Get1GroupForNCoresWithNParams`，产生一组针对 `N` 个核的配置-测试帧，每个核配置**不同参数**。可以指定单个需要**屏蔽**的核坐标
+2. `Get1GroupForNCoresWithNParams`，产生1组针对 `N` 个核的配置-测试帧，每个核配置**不同参数**。可以指定单个需要**屏蔽**的核坐标
 
    ```python
    groups = 10             # Generate 10 groups
@@ -40,21 +39,18 @@
    ```
 
    ⚠️ 指定 `verbose=True` 以开启日志显示，默认关闭
-
 3. `Get1GroupForNCoresWith1Param`，产生1组针对 `N` 个核的配置-测试帧，每个核配置**相同参数**。可以指定单个需要**屏蔽**的核坐标
 
    ```python
    # Same as Get1GroupForNCoresWithNParams
    cf, ti, to = PAITestManager.Get1GroupForNCoresWith1Param(10, save_dir="./test")
    ```
-
 4. `GetNGroupsFor1CoreWithNParams`，产生 `N` 组针对1个核的配置-测试帧，每个核配置**不同参数**。可以指定单个需要**屏蔽**的核坐标
 
    ```python
    # Same as Get1GroupForNCoresWithNParams
    cf, ti, to = PAITestManager.GetNGroupsFor1CoreWithNParams(1, save_dir="./test")
    ```
-
 5. `ReplaceCoreCoord`，替换**单个**或**一组**帧中的 `CORE_ADDR` 为指定坐标
 
    ```python
@@ -63,7 +59,6 @@
    ```
 
    ⚠️ 一组指一组完整的配置帧，包含3帧。对于测试输入帧，即为单帧。
-
 6. `SaveFrames`，保存帧数据至指定文件，支持 `.bin` 或 `.txt` 格式，支持指定大/小端输出
 
    ```python
@@ -78,6 +73,6 @@
 
 ## 🗓️ TODO
 
-- [x] 上板验证
+- [X] 上板验证
 - [ ] 参数检验
 - [ ] 配置/测试帧III/IV型
