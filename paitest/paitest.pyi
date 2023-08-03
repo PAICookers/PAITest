@@ -11,12 +11,16 @@ class paitest:
             self,
             direction: Literal["EAST", "SOUTH", "WEST", "NORTH"] = "EAST",
             fixed_chip_coord: Tuple[int, int] = (0, 0),
+            *,
+            test_chip_coord: Optional[Tuple[int, int]] = None,
         ) -> None: ...
     else:
         def __init__(
             self,
             direction: str = "EAST",
             fixed_chip_coord: Tuple[int, int] = (0, 0),
+            *,
+            test_chip_coord: Optional[Tuple[int, int]] = None,
         ) -> None: ...
 
     def Get1GroupForNCoresWithNParams(

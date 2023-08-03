@@ -2,10 +2,15 @@ from paitest import paitest
 from paitest.frames import FrameDecoder
 
 if __name__ == "__main__":
-    """Here are simple exmaples"""
-
     # PAITest instance
-    PAITestManager = paitest("EAST")
+    """
+    The parameter 'direction' will be deprecated in the future version.
+    Passing 'test_chip_coord' is recommended.
+    If you pass both 'test_chip_coord' and 'direction', the 'direction' becomes useless.
+    """
+    PAITestManager = paitest(
+        "EAST", (0, 0), test_chip_coord=(1, 0)
+    )  # FPGA is on the east of PAICORE(0, 0)
 
     # 1. Generate 1 group for N cores with N **different** parameters reg.
     a_cf, a_ti, a_to = PAITestManager.Get1GroupForNCoresWithNParams(

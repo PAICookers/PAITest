@@ -2,11 +2,11 @@ import random
 import sys
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
-
 from .frames import Addr2Coord, Coord, Coord2Addr, Direction, FrameGen
 from .frames import FrameMask as FM
 from .frames import FrameSubType as FST
 from .log import logger
+import warnings
 
 if sys.version_info >= (3, 8):
     from typing import Literal
@@ -17,11 +17,16 @@ class paitest:
         self,
         direction="EAST",
         fixed_chip_coord: Tuple[int, int] = (0, 0),
+        *,
+        test_chip_coord: Optional[Tuple[int, int]] = None,
     ) -> None:
-        """
-        Params:
-        - direction: The direction relative to the PAICORE. Default is 'EAST'.
-        - fixed_chip_coord: The chip address of the PAICORE under test. Default is (0, 0).
+        """Paitest initialization.
+
+        Arguments:
+            - direction: The direction relative to the PAICORE. Default is 'EAST'.
+            - fixed_chip_coord: The chip address of the PAICORE under test.
+            - test_chip_coord: The address of the FPGA relative to the PAICORE.
+                If you pass one, use this at high priority instead of 'direction'.
         """
         self._verbose: bool = True
         self._fixed_chip_coord: Coord = Coord(fixed_chip_coord)
@@ -29,7 +34,16 @@ class paitest:
         self._fixed_core_star_coord: Coord = Coord(0, 0)
         self._test_chip_coord: Coord
 
-        self._ensure_direction(direction)
+        if not isinstance(test_chip_coord, Tuple):
+            warnings.warn(
+                "Parameter 'direction' will be deprecated in the future version. Use 'test_chip_coord' instead.",
+                DeprecationWarning,
+            )
+
+            self._ensure_direction(direction)
+            self._test_chip_coord = self._direction.value + self._fixed_chip_coord
+        else:
+            self._test_chip_coord = Coord(test_chip_coord)
 
     def Get1GroupForNCoresWithNParams(
         self,
@@ -39,17 +53,17 @@ class paitest:
         masked_core_coord: Optional[Tuple[int, int]] = None,
         verbose: bool = False,
     ) -> Tuple[Tuple[int, ...], ...]:
-        """
-        Generate 1 group(case) for 'N' random cores coordinates with 'N' different parameters.
+        """Generate 1 group(case) for 'N' random cores coordinates with 'N' different parameters.
 
-        Params:
-        - `N`: How many cores coordinates under test.
-        - `save_dir`: Where to save the frames files.
-        - `masked_core_coord`: to avoid generating the specific core coordinate.
-        - `gen_txt`: to save frames into text files instead of default binary files.
-        - `verbose`: whether to display the log.
+        Arguments:
+            - N: How many cores coordinates under test.
+            - save_dir: Where to save the frames files.
+            - masked_core_coord: to avoid generating the specific core coordinate.
+            - gen_txt: to save frames into text files instead of default binary files.
+            - verbose: whether to display the log.
 
-        :return: 3 tuples including config, testin & testout tuples. 3*N frames in config & testout tuple and N frames in testin tuple.
+        Returns:
+            - 3 tuples including config, testin & testout tuples. 3*N frames in config & testout tuple and N frames in testin tuple.
         """
         self._ensure_cores(N)
 
@@ -58,10 +72,7 @@ class paitest:
         else:
             work_dir = None
 
-        # 1. Get the test chip coordinate.
-        test_chip_coord: Coord = self._direction.value + self._fixed_chip_coord
-
-        # 2. Get N core coordinates list.
+        # 1. Get N core coordinates list.
         if isinstance(masked_core_coord, Tuple):
             _masked_core_coord = Coord(masked_core_coord)
         else:
@@ -69,7 +80,7 @@ class paitest:
 
         core_coords = self._GetNCoresCoord(N, _masked_core_coord)
 
-        # 3. Get N parameters reg.
+        # 2. Get N parameters reg.
         params = self._GetNParams(N, core_coords, False)
 
         cf_list: List[int] = []
@@ -79,6 +90,7 @@ class paitest:
         for i in range(N):
             if verbose:
                 logger.info(f"Generating test group #{i+1}/{N}...")
+            
             core_coord = core_coords[i]
             param = params[i]
 
@@ -91,7 +103,10 @@ class paitest:
                     param[j],
                 )
                 testout_frame = FrameGen.GenTest2OutFrame(
-                    test_chip_coord, core_coord, self._fixed_core_star_coord, param[j]
+                    self._test_chip_coord,
+                    core_coord,
+                    self._fixed_core_star_coord,
+                    param[j],
                 )
                 cf_list.append(config_frame)
                 to_list.append(testout_frame)
@@ -127,17 +142,17 @@ class paitest:
         masked_core_coord: Optional[Tuple[int, int]] = None,
         verbose: bool = False,
     ) -> Tuple[Tuple[int, ...], ...]:
-        """
-        Generate 1 group(case) for 'N' random cores coordinates with the same parameters.
+        """Generate 1 group(case) for 'N' random cores coordinates with the same parameters.
 
-        Params:
-        - `N`: How many cores coordinates under test.
-        - `save_dir`: Where to save the frames files.
-        - `masked_core_coord`: to avoid generating the specific core coordinate.
-        - `gen_txt`: to save frames into text files instead of default binary files.
-        - `verbose`: whether to display the log.
+        Arguments:
+            - N: How many cores coordinates under test.
+            - save_dir: Where to save the frames files.
+            - masked_core_coord: to avoid generating the specific core coordinate.
+            - gen_txt: to save frames into text files instead of default binary files.
+            - verbose: whether to display the log.
 
-        :return: 3 tuples including config, testin & testout tuples. 3*N frames in config & testout tuple and N frames in testin tuple.
+        Returns:
+            - 3 tuples including config, testin & testout tuples. 3*N frames in config & testout tuple and N frames in testin tuple.
         """
         self._ensure_cores(N)
 
@@ -146,10 +161,7 @@ class paitest:
         else:
             work_dir = None
 
-        # 1. Get the test chip coordinate.
-        test_chip_coord = self._direction.value + self._fixed_chip_coord
-
-        # 2. Get N core coordinates list.
+        # 1. Get N core coordinates list.
         if isinstance(masked_core_coord, Tuple):
             _masked_core_coord = Coord(masked_core_coord)
         else:
@@ -157,7 +169,7 @@ class paitest:
 
         core_coords = self._GetNCoresCoord(N, _masked_core_coord)
 
-        # 3. Get the parameters reg.
+        # 2. Get the parameters reg.
         param: Tuple[int, ...] = self._Get1Param(core_coords, False)
 
         cf_list: List[int] = []
@@ -178,7 +190,10 @@ class paitest:
                     param[j],
                 )
                 testout_frame = FrameGen.GenTest2OutFrame(
-                    test_chip_coord, core_coord, self._fixed_core_star_coord, param[j]
+                    self._test_chip_coord,
+                    core_coord,
+                    self._fixed_core_star_coord,
+                    param[j],
                 )
                 cf_list.append(config_frame)
                 to_list.append(testout_frame)
@@ -214,17 +229,17 @@ class paitest:
         masked_core_coord: Optional[Tuple[int, int]] = None,
         verbose: bool = False,
     ) -> Tuple[Tuple[int, ...], ...]:
-        """
-        Generate 'N' groups(cases) for 1 random core coordinate with 'N' different parameters.
+        """Generate 'N' groups(cases) for 1 random core coordinate with 'N' different parameters.
 
-        Params:
-        - `N`: How many test groups(cases) of 1 core will be generated.
-        - `save_dir`: Where to save the frames files.
-        - `masked_core_coord`: to avoid generating the specific core coordinate.
-        - `gen_txt`: to save frames into text files instead of default binary files.
-        - `verbose`: whether to display the log.
+        Arguments:
+            - N: How many test groups(cases) of 1 core will be generated.
+            - save_dir: Where to save the frames files.
+            - masked_core_coord: to avoid generating the specific core coordinate.
+            - gen_txt: to save frames into text files instead of default binary files.
+            - verbose: whether to display the log.
 
-        :return: 3 tuples including config, testin & testout tuples. 3*N frames in config & testout tuple and N frames in testin tuple.
+        Returns:
+            - 3 tuples including config, testin & testout tuples. 3*N frames in config & testout tuple and N frames in testin tuple.
         """
         self._ensure_cores(N)
 
@@ -233,10 +248,7 @@ class paitest:
         else:
             work_dir = None
 
-        # 1. Get the test chip coordinate.
-        test_chip_coord = self._direction.value + self._fixed_chip_coord
-
-        # 2. Get the core coordinates list.
+        # 1. Get the core coordinates list.
         if isinstance(masked_core_coord, Tuple):
             _masked_core_coord = Coord(masked_core_coord)
         else:
@@ -244,7 +256,7 @@ class paitest:
 
         core_coord = self._Get1CoreCoord(_masked_core_coord)
 
-        # 3. Get the parameters reg.
+        # 2. Get the parameters reg.
         params = self._GetNParams(N, core_coord, False)
 
         cf_list: List[int] = []
@@ -265,7 +277,10 @@ class paitest:
                     param[j],
                 )
                 testout_frame = FrameGen.GenTest2OutFrame(
-                    test_chip_coord, core_coord, self._fixed_core_star_coord, param[j]
+                    self._test_chip_coord,
+                    core_coord,
+                    self._fixed_core_star_coord,
+                    param[j],
                 )
                 cf_list.append(config_frame)
                 to_list.append(testout_frame)
@@ -298,14 +313,14 @@ class paitest:
         frames: Union[int, List[int], Tuple[int, ...]],
         new_core_coord: Optional[Union[Tuple[int, int], Coord]] = None,
     ) -> Union[int, Tuple[int, ...]]:
-        """
-        Replace the core coordinate with the new one.
+        """Replace the core coordinate with the new one.
 
-        Params:
-        - frames: of which the core coordinate you want to replace. It can be a single frame, or a list or tuple.
-        - new_core_coord: The new core coordinate. If not specified, it will generate one randomly.
+        Arguments:
+            - frames: of which the core coordinate you want to replace. It can be a single frame, or a list or tuple.
+            - new_core_coord: The new core coordinate. If not specified, it will generate one randomly.
 
-        :return: the frame or frames after replacement.
+        Returns:
+            - the frame or frames after replacement.
         """
         if isinstance(frames, int):
             _frame = frames
@@ -338,13 +353,12 @@ class paitest:
         frames: Union[int, List[int], Tuple[int, ...]],
         byteorder="big",
     ) -> None:
-        """
-        Write frames into specific text or binary file. Files with '.bin' suffix is recommended.
+        """Write frames into specific text or binary file. Files with '.bin' suffix is recommended.
 
-        Params:
-        - save_path: The path of files.
-        - frames: A single frame or list or tuple of frames.
-        - byteorder: Big or little-edian format.
+        Arguments:
+            - save_path: The path of files.
+            - frames: A single frame or list or tuple of frames.
+            - byteorder: Big or little-edian format.
         """
 
         _path = Path(save_path)
@@ -358,10 +372,10 @@ class paitest:
         if _suffix == ".bin":
             with open(_path, "wb") as f:
                 if isinstance(frames, int):
-                    f.write(frames.to_bytes(8, byteorder))
+                    f.write(frames.to_bytes(8, byteorder))  # type: ignore
                 else:
                     for frame in frames:
-                        f.write(frame.to_bytes(8, byteorder))
+                        f.write(frame.to_bytes(8, byteorder))  # type: ignore
 
         else:
             if byteorder == "little":
@@ -383,16 +397,18 @@ class paitest:
         logger.info(f"Saved frame(s) into {_path} OK")
 
     def _Get1CoreCoord(self, masked_coord: Optional[Coord] = None) -> Coord:
-        """
-        Generate a random core coordinate. Indicate the masked one to avoid generating the same one
+        """Generate a random core coordinate.
+
+        Indicate the masked one to avoid generating the same one
         """
         return self._GetNCoresCoord(N=1, masked_coord=masked_coord)[0]
 
     def _GetNCoresCoord(
         self, N: int, masked_coord: Optional[Coord] = None
     ) -> List[Coord]:
-        """
-        Generate 'N' unique cores coordinates. Optional for excluding one masked core address
+        """Generate 'N' unique cores coordinates.
+
+        Optional for excluding one masked core address
         """
 
         def _CoordGenerator():
@@ -433,20 +449,17 @@ class paitest:
         core_coords: Union[List[Coord], Coord],
         is_legal: bool = False,
     ) -> List[Tuple[int, ...]]:
-        """
-        Generate 'N' random parameters register.
+        """Generate 'N' random parameters register.
 
-        Params:
-        - `is_legal`: whether to generate legal parameters for every core
+        Arguments:
+            - is_legal: whether to generate legal parameters for every core
         """
 
         def _ParamGenerator():
-            test_chip_coord: Coord = self._direction.value + self._fixed_chip_coord
-
             while True:
                 for core_coord in _core_coords:
                     if is_legal:
-                        # TODO: Do legal generation here, including direction config
+                        # TODO Do legal generation here, including direction config
                         raise NotImplementedError
                     else:
                         param = FrameGen.GenConfigGroup(
@@ -454,7 +467,7 @@ class paitest:
                             self._fixed_chip_coord,
                             core_coord,
                             self._fixed_core_star_coord,
-                            test_chip_coord,
+                            self._test_chip_coord,
                         )
 
                     yield param
@@ -484,8 +497,9 @@ class paitest:
         frames: List[int],
         new_core_coord: Coord,
     ) -> Tuple[int, ...]:
-        """
-        Replace the core coordinate of frames with a specific or random one. Keep the parameters still.
+        """Replace the core coordinate of frames with a specific or random one.
+
+        Keep the parameters still.
         """
         mask = FM.GENERAL_MASK & (
             ~(FM.GENERAL_CORE_ADDR_MASK << FM.GENERAL_CORE_ADDR_OFFSET)
