@@ -1,4 +1,4 @@
-from enum import Enum, Flag, unique
+from enum import Enum, IntEnum, Flag, unique
 
 from .coord import CoordOffset
 
@@ -14,9 +14,9 @@ class FrameType(Enum):
     """Types of Frames"""
 
     FRAME_CONFIG = 0
-    FRAME_TEST = 0x1
-    FRAME_WORK = 0x2
-    FRAME_UNKNOWN = 0x3
+    FRAME_TEST = 1
+    FRAME_WORK = 2
+    FRAME_UNKNOWN = 3
 
 
 @unique
@@ -159,50 +159,68 @@ class ConfigFrameMask(FrameMask):
 
 
 @unique
-class WeightPrecisionType(Enum):
-    """Wight precision of crossbar"""
+class WeightPrecisionType(IntEnum):
+    """Weight precision of crossbar. 2-bit.
+
+    - `WEIGHT_WIDTH_XBIT` for X-bit. Default value is `WEIGHT_WIDTH_8BIT`.
+    """
 
     WEIGHT_WIDTH_1BIT = 0
     WEIGHT_WIDTH_2BIT = 1
     WEIGHT_WIDTH_4BIT = 2
-    WEIGHT_WIDTH_8BIT = 3
+    WEIGHT_WIDTH_8BIT = 3  # Default value.
+    WEIGHT_WIDTH_MAX = 4
 
 
 @unique
-class LCNTypes(Enum):
-    """Scale of Fan-in extension"""
+class LCNExtensionType(IntEnum):
+    """Scale of Fan-in extension. 4-bit.
 
-    LCN_1X = 0
+    - X-time LCN extension. Default value is `LCN_1X`.
+
+    NOTE:
+    - For ANN mode, `LCN_1X` = 144x.
+    - For BANN/SNN mode, `LCN_1X` = 1152x.
+    """
+
+    LCN_1X = 0  # Default value.
     LCN_2X = 1
     LCN_4X = 2
     LCN_8X = 3
     LCN_16X = 4
     LCN_32X = 5
     LCN_64X = 6
+    LCN_MAX = 7
 
 
 @unique
-class InputWidthType(Enum):
-    """Format of Input Spike"""
+class InputWidthFormatType(Enum):
+    """Format of input spike. 1-bit.
 
-    INPUT_WIDTH_1BIT = 0
-    INPUT_WIDTH_8BIT = 1
+    - `WIDTH_1BIT`: 1-bit spike. Default value.
+    - `WIDTH_8BIT`: 8-bit activation.
+    """
+
+    WIDTH_1BIT = 0
+    WIDTH_8BIT = 1
 
 
 @unique
-class SpikeWidthType(Enum):
-    """Format of Output Spike"""
+class SpikeWidthFormatType(Enum):
+    """Format of output spike. 1-bit.
 
-    SPIKE_WIDTH_1BIT = 0
-    SPIKE_WIDTH_8BIT = 1
+    - `WIDTH_1BIT`: 1-bit spike. Default value.
+    - `WIDTH_8BIT`: 8-bit activation.
+    """
+
+    WIDTH_1BIT = 0  # Default value.
+    WIDTH_8BIT = 1
 
 
 @unique
 class Direction(Enum):
     """
-    For [x, y]
-    Left to right: +x
-    Top to bottom: +y
+    Left to right: +x, Top to bottom: +y
     """
 
     EAST = CoordOffset(1, 0)
