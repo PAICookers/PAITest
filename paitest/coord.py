@@ -1,10 +1,19 @@
+from enum import Enum, unique
 from typing import Optional, Tuple, Union, overload
+
+
+@unique
+class CoreType(Enum):
+    TYPE_OFFLINE = 1
+    TYPE_ONLINE = 0
 
 
 class Coord:
     """Coordinates of the cores. Set coordinates (x, y) for every cores.
 
     Left to right, +X, up to down, +Y.
+
+    NOTE: Also represent the replication identifier of core address for broadcasting.
     """
 
     _COORD_MAX_LIMIT = (1 << 5) - 1
@@ -25,11 +34,21 @@ class Coord:
         else:
             raise ValueError("Wrong Argument")
 
-        if not (self._COORD_LOW_LIMIT <= x <= self._COORD_MAX_LIMIT and self._COORD_LOW_LIMIT <= y <= self._COORD_MAX_LIMIT):
-            raise ValueError(f"{self._COORD_LOW_LIMIT} <= x <= {self._COORD_MAX_LIMIT}, {self._COORD_LOW_LIMIT} <= y <= {self._COORD_MAX_LIMIT}: ({x}, {y})")
+        if not (
+            self._COORD_LOW_LIMIT <= x <= self._COORD_MAX_LIMIT
+            and self._COORD_LOW_LIMIT <= y <= self._COORD_MAX_LIMIT
+        ):
+            raise ValueError(
+                f"{self._COORD_LOW_LIMIT} <= x <= {self._COORD_MAX_LIMIT}, {self._COORD_LOW_LIMIT} <= y <= {self._COORD_MAX_LIMIT}: ({x}, {y})"
+            )
 
         self.x: int = x
         self.y: int = y
+
+        if self.x >= 0b11100 and self.y >= 0b11100:
+            self._core_type = CoreType.TYPE_ONLINE
+        else:
+            self._core_type = CoreType.TYPE_OFFLINE
 
     @classmethod
     def from_tuple(cls, pos) -> "Coord":
@@ -172,6 +191,10 @@ class Coord:
     def address(self) -> int:
         return self._to_address()
 
+    @property
+    def core_type(self) -> CoreType:
+        return self._core_type
+
 
 class CoordOffset:
     """Offset of coordinates"""
@@ -180,8 +203,13 @@ class CoordOffset:
     _COORDOFFSET_LOW_LIMIT = -(1 << 5)
 
     def __init__(self, _delta_x: int, _delta_y: int) -> None:
-        if not (self._COORDOFFSET_LOW_LIMIT < _delta_x <= self._COORDOFFSET_MAX_LIMIT and self._COORDOFFSET_LOW_LIMIT < _delta_y <= self._COORDOFFSET_MAX_LIMIT):
-            raise ValueError(f"{self._COORDOFFSET_LOW_LIMIT} < delta_x <= {self._COORDOFFSET_MAX_LIMIT}, {self._COORDOFFSET_LOW_LIMIT} < delta_y <= {self._COORDOFFSET_MAX_LIMIT}: ({_delta_x}, {_delta_y})")
+        if not (
+            self._COORDOFFSET_LOW_LIMIT < _delta_x <= self._COORDOFFSET_MAX_LIMIT
+            and self._COORDOFFSET_LOW_LIMIT < _delta_y <= self._COORDOFFSET_MAX_LIMIT
+        ):
+            raise ValueError(
+                f"{self._COORDOFFSET_LOW_LIMIT} < delta_x <= {self._COORDOFFSET_MAX_LIMIT}, {self._COORDOFFSET_LOW_LIMIT} < delta_y <= {self._COORDOFFSET_MAX_LIMIT}: ({_delta_x}, {_delta_y})"
+            )
 
         self.delta_x: int = _delta_x
         self.delta_y: int = _delta_y
@@ -285,3 +313,6 @@ class CoordOffset:
             raise TypeError(f"Unsupported type: {type(__other)}")
 
         return self.delta_x != __other.delta_x or self.delta_y != __other.delta_y
+
+
+ReplicationId = Coord
