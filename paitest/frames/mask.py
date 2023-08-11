@@ -1,0 +1,185 @@
+class FrameMask:
+    """General frame mask"""
+
+    """Format of single frame"""
+    # Global mask
+    GENERAL_MASK = (1 << 64) - 1
+
+    # Frame header
+    GENERAL_HEADER_OFFSET = 60
+    GENERAL_HEADER_MASK = (1 << 4) - 1
+
+    GENERAL_FRAME_TYPE_OFFSET = GENERAL_HEADER_OFFSET
+    GENERAL_FRAME_TYPE_MASK = GENERAL_HEADER_MASK
+
+    # Destination chip address
+    GENERAL_CHIP_ADDR_OFFSET = 50
+    GENERAL_CHIP_ADDR_MASK = (1 << 10) - 1
+    GENERAL_CHIP_ADDR_X_OFFSET = 55
+    GENERAL_CHIP_ADDR_X_MASK = (1 << 5) - 1
+    GENERAL_CHIP_ADDR_Y_OFFSET = GENERAL_CHIP_ADDR_OFFSET
+    GENERAL_CHIP_ADDR_Y_MASK = (1 << 5) - 1
+
+    # Destination core address
+    GENERAL_CORE_ADDR_OFFSET = 40
+    GENERAL_CORE_ADDR_MASK = (1 << 10) - 1
+    GENERAL_CORE_ADDR_X_OFFSET = 45
+    GENERAL_CORE_ADDR_X_MASK = (1 << 5) - 1
+    GENERAL_CORE_ADDR_Y_OFFSET = GENERAL_CORE_ADDR_OFFSET
+    GENERAL_CORE_ADDR_Y_MASK = (1 << 5) - 1
+
+    # Replication identifier of core address
+    GENERAL_CORE_STAR_ADDR_OFFSET = 30
+    GENERAL_CORE_STAR_ADDR_MASK = (1 << 10) - 1
+    GENERAL_CORE_STAR_ADDR_X_OFFSET = 35
+    GENERAL_CORE_STAR_ADDR_X_MASK = (1 << 5) - 1
+    GENERAL_CORE_STAR_ADDR_Y_OFFSET = GENERAL_CORE_STAR_ADDR_OFFSET
+    GENERAL_CORE_STAR_ADDR_Y_MASK = (1 << 5) - 1
+
+    # Global core address = Chip address + core address
+    GENERAL_CORE_GLOBAL_ADDR_OFFSET = GENERAL_CORE_ADDR_OFFSET
+    GENERAL_CORE_GLOBAL_ADDR_MASK = (1 << 20) - 1
+
+    # Payload
+    GENERAL_PAYLOAD_OFFSET = 0
+    GENERAL_PAYLOAD_MASK = (1 << 30) - 1
+    GENERAL_PAYLOAD_FILLED_MASK = (1 << 4) - 1
+
+    """Format of startup frame of data package"""
+    GENERAL_PACKAGE_OFFSET = 0
+    GENERAL_PACKAGE_MASK = (1 << 20) - 1
+
+    GENERAL_PACKAGE_SRAM_START_ADDR_OFFSET = 20
+    GENERAL_PACKAGE_SRAM_START_ADDR_MASK = (1 << 10) - 1
+
+    GENERAL_PACKAGE_TYPE_OFFSET = 19
+    GENERAL_PACKAGE_TYPE_MASK = 0x1
+
+    GENERAL_PACKAGE_COUNT_OFFSET = 0
+    GENERAL_PACKAGE_COUNT_MASK = (1 << 19) - 1
+
+
+class OfflineConfigFrameMask(FrameMask):
+    """Conguration Frame Type II of offline core"""
+
+    """Frame #1"""
+    WEIGHT_WIDTH_OFFSET = 28
+    WEIGHT_WIDTH_MASK = (1 << 2) - 1
+
+    LCN_OFFSET = 24
+    LCN_MASK = (1 << 4) - 1
+
+    INPUT_WIDTH_OFFSET = 23
+    INPUT_WIDTH_MASK = 1
+
+    SPIKE_WIDTH_OFFSET = 22
+    SPIKE_WIDTH_MASK = 1
+
+    NEURON_NUM_OFFSET = 9
+    NEURON_NUM_MASK = (1 << 13) - 1
+
+    POOL_MAX_OFFSET = 8
+    POOL_MAX_MASK = 1
+
+    TICK_WAIT_START_HIGH8_OFFSET = 0
+    TICK_WAIT_START_COMBINATION_OFFSET = 7
+    TICK_WAIT_START_HIGH8_MASK = (1 << 8) - 1
+
+    """Frame #2"""
+    TICK_WAIT_START_LOW7_OFFSET = 23
+    TICK_WAIT_START_LOW7_MASK = (1 << 7) - 1
+
+    TICK_WAIT_END_OFFSET = 8
+    TICK_WAIT_END_MASK = (1 << 15) - 1
+
+    SNN_EN_OFFSET = 7
+    SNN_EN_MASK = 1
+
+    TARGET_LCN_OFFSET = 3
+    TARGET_LCN_MASK = (1 << 4) - 1
+
+    TEST_CHIP_ADDR_HIGH3_OFFSET = 0
+    TEST_CHIP_ADDR_COMBINATION_OFFSET = 7
+    TEST_CHIP_ADDR_HIGH3_MASK = (1 << 3) - 1
+
+    """Frame #3"""
+    TEST_CHIP_ADDR_LOW7_OFFSET = 23
+    TEST_CHIP_ADDR_LOW7_MASK = (1 << 7) - 1
+
+    ALL_ZERO_OFFSET = 0
+    ALL_ZERO_MASK = (1 << 23) - 1
+
+
+class OnlineConfigFrameMask(FrameMask):
+    """Conguration Frame Type II of online core"""
+
+    """Frame #1"""
+    BIT_SELECT_OFFSET = 28
+    BIT_SELECT_MASK = (1 << 2) - 1
+
+    GROUP_SELECT_OFFSET = 26
+    GROUP_SELECT_MASK = (1 << 2) - 1
+
+    LATERAL_INHI_VALUE_HIGH26_OFFSET = 0
+    LATERAL_INHI_VALUE_HIGH26_MASK = (1 << 26) - 1
+
+    """Frame #2"""
+    LATERAL_INHI_VALUE_LOW6_OFFSET = 24
+    LATERAL_INHI_VALUE_LOW6_MASK = (1 << 6) - 1
+
+    WEIGHT_DECAY_VALUE_OFFSET = 16
+    WEIGHT_DECAY_VALUE_MASK = (1 << 8) - 1
+
+    UPPER_WEIGHT_OFFSET = 8
+    UPPER_WEIGHT_MASK = (1 << 8) - 1
+
+    LOWER_WEIGHT_OFFSET = 0
+    LOWER_WEIGHT_MASK = (1 << 8) - 1
+
+    """Frame #3"""
+    NEURON_START_OFFSET = 20
+    NEURON_START_MASK = (1 << 10) - 1
+
+    NEURON_END_OFFSET = 10
+    NEURON_END_MASK = (1 << 10) - 1
+
+    INHI_CORE_X_STAR_OFFSET = 5
+    INHI_CORE_X_STAR_MASK = (1 << 5) - 1
+
+    INHI_CORE_Y_STAR_OFFSET = 0
+    INHI_CORE_Y_STAR_MASK = (1 << 5) - 1
+
+    """Frame #4"""
+    CORE_START_TIME_OFFSET = 15
+    CORE_START_TIME_MASK = (1 << 15) - 1
+
+    CORE_END_TIME_OFFSET = 0
+    CORE_END_TIME_MASK = (1 << 15) - 1
+
+    """Frame #5"""
+    LUT_RANDOM_EN_HIGH30_OFFSET = 0
+    LUT_RANDOM_EN_HIGH30_MASK = (1 << 30) - 1
+
+    """Frame #6"""
+    LUT_RANDOM_EN_LOW30_OFFSET = 0
+    LUT_RANDOM_EN_LOW30_MASK = (1 << 30) - 1
+
+    """Frame #7"""
+    DECAY_RANDOM_EN_OFFSET = 29
+    DECAY_RANDOM_EN_MASK = 1
+
+    LEAKAGE_ORDER_OFFSET = 27  # Here is 27! 1'b0 on 28-bit.
+    LEAKAGE_ORDER_MASK = 1
+
+    ONLINE_MODE_EN_OFFSET = 16
+    ONLINE_MODE_EN_MASK = 1
+
+    TEST_ADDRESS_OFFSET = 16
+    TEST_ADDRESS_MASK = (1 << 10) - 1
+
+    RANDOM_SEED_OFFSET = 0
+    RANDOM_SEED_MASK = (1 << 16) - 1
+
+    """Frame #8"""
+    ALL_ZERO_OFFSET = 0
+    ALL_ZERO_MASK = (1 << 30) - 1
