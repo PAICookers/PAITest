@@ -1,39 +1,196 @@
 import random
 from typing import Any, Dict, List, Optional, Tuple, Union
-
-from .coord import Coord
-from .frame_params import ConfigFrameMask as CFM
-from .frame_params import FrameMask as FM
-from .frame_params import FrameSubType as FST
-from .frame_params import FrameType as FT
-from .frame_params import *
+from .mask import OfflineConfigFrameMask as CFM, FrameMask as FM
+from paitest.coord import Coord, ReplicationId
+from paitest.base import Direction
+from paitest._types import FrameSubType as FST, FrameType as FT, PayloadId as PID
+from paitest.utils import bin_split, bin_combine
 
 
 def Addr2Coord(addr: int) -> Coord:
-    return Coord(addr >> 5, addr & ((1 << 5) - 1))
+    return Coord.from_tuple(bin_split(addr, 5))
 
 
 def Coord2Addr(coord: Coord) -> int:
-    return (coord.x << 5) | coord.y
+    return bin_combine(coord.x, coord.y, 5)
 
 
 def test_chip_coord_split(coord: Coord) -> Tuple[int, int]:
     addr = Coord2Addr(coord)
-    high3 = (
-        addr >> CFM.TEST_CHIP_ADDR_COMBINATION_OFFSET
-    ) & CFM.TEST_CHIP_ADDR_HIGH3_MASK
-    low7 = addr & CFM.TEST_CHIP_ADDR_LOW7_MASK
 
-    return high3, low7
+    return bin_split(addr, 7, high_mask=CFM.TEST_CHIP_ADDR_HIGH3_MASK)
 
 
 def test_chip_addr_combine(high3: int, low7: int) -> Coord:
     _high3 = high3 & CFM.TEST_CHIP_ADDR_HIGH3_MASK
     _low7 = low7 & CFM.TEST_CHIP_ADDR_LOW7_MASK
-
-    addr = (_high3 << CFM.TEST_CHIP_ADDR_COMBINATION_OFFSET) | _low7
+    addr = bin_combine(_high3, _low7, CFM.TEST_CHIP_ADDR_COMBINATION_OFFSET)
 
     return Addr2Coord(addr)
+
+
+class Frame:
+    """Single frame which contains information of it."""
+
+    def __init__(
+        self,
+        subtype: FST,
+        chip_coord: Coord,
+        core_coord: Coord,
+        replication_id: ReplicationId,
+        payload: int = 0,
+    ) -> None:
+        """
+        Arguments:
+            - subtype: sub type of frame.
+            - chip_coord: coordinate of the destination chip.
+            - core_coord: coordinate of the destination core.
+            - replication_id: the replication identifier.
+            - payload: 30-bit data.
+        """
+        self.subtype = subtype
+        self.chip_coord = chip_coord
+        self.core_coord = core_coord
+        self.replication_id = replication_id
+        self.payload = payload
+
+    @classmethod
+    def GenFrame(
+        cls,
+        subtype: FST,
+        chip_coord: Coord,
+        core_coord: Coord,
+        replication_id: ReplicationId,
+        payload: int,
+    ) -> "Frame":
+        return cls(subtype, chip_coord, core_coord, replication_id, payload)
+
+    @property
+    def frame_type(self) -> FST:
+        return self.subtype
+
+    @property
+    def header(self) -> int:
+        return self.subtype.value
+
+    @property
+    def chip_address(self) -> int:
+        return self.chip_coord.address
+
+    @property
+    def core_address(self) -> int:
+        return self.core_coord.address
+
+    @property
+    def core_star_address(self) -> int:
+        return self.replication_id.address
+
+    @property
+    def value(self) -> int:
+        return self._fill_payload(self.payload)
+
+    def _fill_payload(self, payload: int) -> int:
+        header = self.header & FM.GENERAL_HEADER_MASK
+        chip_addr = self.chip_address & FM.GENERAL_CHIP_ADDR_MASK
+        core_addr = self.core_address & FM.GENERAL_CORE_ADDR_MASK
+        core_star_addr = self.core_star_address & FM.GENERAL_CORE_STAR_ADDR_MASK
+        payload = payload & FM.GENERAL_PAYLOAD_MASK
+
+        return (
+            (header << FM.GENERAL_HEADER_OFFSET)
+            | (chip_addr << FM.GENERAL_CHIP_ADDR_OFFSET)
+            | (core_addr << FM.GENERAL_CORE_ADDR_OFFSET)
+            | (core_star_addr << FM.GENERAL_CORE_STAR_ADDR_OFFSET)
+            | (payload << FM.GENERAL_PAYLOAD_OFFSET)
+        )
+
+
+class FrameGroup(Frame):
+    """A group of frames for pattern II.
+
+    For pattern II, the payload is split into `N` parts,
+    carried by `N` frames which share other configuration items.
+    """
+
+    def __init__(
+        self,
+        subtype: FST,
+        chip_coord: Coord,
+        core_coord: Coord,
+        replication_id: ReplicationId,
+        *payload,
+        **kwargs,
+    ) -> None:
+        super().__init__(subtype, chip_coord, core_coord, replication_id)
+
+        self._length = len(payload)
+        self.payload = payload
+
+    @classmethod
+    def GenConfigGroup(
+        cls,
+        _type: str,
+        subtype: FST,
+        chip_coord: Coord,
+        core_coord: Coord,
+        replication_id: ReplicationId,
+        *payload,
+    ) -> "FrameGroup":
+        return cls(subtype, chip_coord, core_coord, replication_id, *payload)
+
+    def __getitem__(self, item) -> Frame:
+        return super().GenFrame(
+            self.subtype,
+            self.chip_coord,
+            self.core_coord,
+            self.replication_id,
+            self.payload[item],
+        )
+
+    def __len__(self) -> int:
+        return self.length
+
+    @property
+    def length(self) -> int:
+        return self._length
+
+    @property
+    def value(self) -> List[int]:
+        val_list = []
+        for load in self.payload:
+            val_list.append(self._fill_payload(load))
+
+        return val_list
+
+
+class FramePackage(Frame):
+    """A package of frames for pattern III & IV.
+
+    For pattern III & IV, the package includes:
+        - Initial frame: general.
+        - data frame: full of data.
+    """
+
+    def __init__(
+        self,
+        subtype: FST,
+        chip_coord: Coord,
+        core_coord: Coord,
+        replication_id: ReplicationId,
+        payload: int,
+        *data: int
+    ) -> None:
+        self.data = data
+
+
+    @property
+    def value(self) -> List[int]:
+        val_list = []
+        
+        val_list.append(self._fill_payload(self.payload))
+        val_list.extend(self.data)
+
+        return val_list
 
 
 class FrameGen:
@@ -97,10 +254,10 @@ class FrameGen:
         *,
         is_random: bool = True,
         is_legal: bool = False,
-        weight_width_type: Optional[WeightPrecisionType] = None,
-        lcn_type: Optional[LCNExtensionType] = None,
-        input_width_type: Optional[InputWidthFormatType] = None,
-        spike_width_type: Optional[SpikeWidthFormatType] = None,
+        # weight_width_type: Optional[WeightPrecisionType] = None,
+        # lcn_type: Optional[LCNExtensionType] = None,
+        # input_width_type: Optional[InputWidthFormatType] = None,
+        # spike_width_type: Optional[SpikeWidthFormatType] = None,
         neuron_num: Optional[int] = None,
         pool_max_en: Optional[bool] = None,
         tick_wait_start: Optional[int] = None,
@@ -369,7 +526,7 @@ class FrameDecoder:
         print("#9  SNN enable:         %d" % self._param_reg_dict["SNN_EN"])
         print("#10 Target LCN:         0x%x" % self._param_reg_dict["target_LCN"])
 
-        test_chip_coord: Coord = self._param_reg_dict["test_chip_coord"] # type: ignore
+        test_chip_coord: Coord = self._param_reg_dict["test_chip_coord"]  # type: ignore
         print(
             "#11 Test chip coord:    [0x%02x | 0x%02x]"
             % (test_chip_coord.x, test_chip_coord.y)
@@ -423,7 +580,7 @@ class FrameDecoder:
         self._param_reg_dict["test_chip_coord"] = test_chip_addr_combine(high3, low7)
 
     def _decode_direction(self) -> Direction:
-        test_chip_coord: Coord = self._param_reg_dict["test_chip_coord"] # type: ignore
+        test_chip_coord: Coord = self._param_reg_dict["test_chip_coord"]  # type: ignore
         offset = test_chip_coord - self._get_chip_coord()
 
         try:
