@@ -37,4 +37,3 @@ class PayloadId(IntEnum):
 
 
 CoordLike = TypeVar("CoordLike", Coord, Tuple[int, ...], List[int])
-FramesType = TypeVar("FramesType", List[int], Tuple[int, ...])
