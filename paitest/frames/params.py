@@ -2,11 +2,22 @@ from abc import ABC, abstractmethod
 import random
 from typing import Optional, Tuple
 import warnings
-from paitest.utils import bin_combine_x
+from paitest.utils import bin_split, bin_combine, bin_combine_x
 from .mask import FrameMask as FM, OfflineConfigFrameMask as OFF_CFM
-from .frame import test_chip_coord_split
-from paitest._types import PayloadId
+from paitest._types import PackageType
 from paitest.coord import Coord
+
+
+def test_chip_coord_split(coord: Coord) -> Tuple[int, int]:
+    return bin_split(coord.address, 7, high_mask=OFF_CFM.TEST_CHIP_ADDR_HIGH3_MASK)
+
+
+def test_chip_addr_combine(high3: int, low7: int) -> Coord:
+    _high3 = high3 & OFF_CFM.TEST_CHIP_ADDR_HIGH3_MASK
+    _low7 = low7 & OFF_CFM.TEST_CHIP_ADDR_LOW7_MASK
+    addr = bin_combine(_high3, _low7, OFF_CFM.TEST_CHIP_ADDR_COMBINATION_OFFSET)
+
+    return Coord.from_tuple(bin_split(addr, 5))
 
 
 class ParamGen(ABC):
@@ -29,6 +40,18 @@ class ParamGen(ABC):
     @abstractmethod
     def GenParamConfig4() -> ...:
         raise NotImplementedError
+
+    @staticmethod
+    def GenRAMInfo(start_addr: int, _type: PackageType, n_package: int) -> int:
+        return bin_combine_x(
+            start_addr,
+            _type.value,
+            n_package,
+            pos=[
+                OFF_CFM.GENERAL_PACKAGE_SRAM_START_ADDR_OFFSET,
+                OFF_CFM.GENERAL_PACKAGE_TYPE_OFFSET,
+            ],
+        )
 
 
 class ParamGenOffline(ParamGen):
@@ -96,60 +119,75 @@ class ParamGenOffline(ParamGen):
 
     @staticmethod
     def GenParamConfig3(
-        sram_start_addr: int, _type: PayloadId, is_random: bool = True, **kwargs
-    ) -> Tuple[int, ...]:
-        """Generate neuron RAM for configuration froame type III"""
-        params = []
+        sram_start_addr: int, n_neuron_ram: int, is_random: bool = True
+    ) -> Tuple[int, Tuple[int, ...]]:
+        """Generate neuron RAM for configuration froame type III.
 
-        params.append(
-            bin_combine_x(
-                sram_start_addr,
-                _type.value,
-                4,
-                pos=[
-                    OFF_CFM.GENERAL_PACKAGE_SRAM_START_ADDR_OFFSET,
-                    OFF_CFM.GENERAL_PACKAGE_TYPE_OFFSET,
-                ],
+        Arguments:
+            - sram_start_addr: the start address of SRAM.
+            - n_neuron_ram: the number of neurons to be configured.
+            - is_random: whether to gererate parameters randomly.(not implemented yet)
+
+        For pattern III, the payload includes:
+            - Packages info: the info of the package.
+            - Content: the data of the package.
+
+        NOTE: `n_package` = 4 * `n_neuron_ram`.
+              `sram_start_addr` + `n_neuron_ram` <= 512.
+        """
+        if sram_start_addr + n_neuron_ram > 512:
+            raise ValueError(
+                f"SRAM start address + number of neuron rams exceeds the limit 512! {sram_start_addr + n_neuron_ram}"
             )
-        )
+
+        info = super().GenRAMInfo(sram_start_addr, PackageType.CONFIG, 4 * n_neuron_ram)
+
+        contents = []
         if is_random:
             for i in range(3):
-                params.append(random.randint(0, FM.GENERAL_MASK))
+                contents.append(random.randint(0, FM.GENERAL_MASK))
 
-            params.append(random.randint(0, (1 << 22) - 1))
+            contents.append(random.randint(0, (1 << 22) - 1))
         else:
             raise NotImplementedError
 
-        return tuple(params)
+        return info, tuple(contents)
 
     @staticmethod
     def GenParamConfig4(
-        sram_start_addr: int,
-        _type: PayloadId,
-        n_package: int = 18,
-        is_random: bool = True,
-    ) -> Tuple[int, ...]:
-        """Generate weight RAM for configuration frame IV"""
-        params = []
+        sram_start_addr: int, n_weight_ram: int, is_random: bool = True
+    ) -> Tuple[int, Tuple[int, ...]]:
+        """Generate weight RAM for configuration frame IV.
 
-        params.append(
-            bin_combine_x(
-                sram_start_addr,
-                _type.value,
-                n_package,
-                pos=[
-                    OFF_CFM.GENERAL_PACKAGE_SRAM_START_ADDR_OFFSET,
-                    OFF_CFM.GENERAL_PACKAGE_TYPE_OFFSET,
-                ],
+        Arguments:
+            - sram_start_addr: the start address of SRAM.
+            - n_weight_ram: the number of weights to be configured.
+            - is_random: whether to gererate parameters randomly.(not implemented yet)
+
+        For pattern IV, the payload includes:
+            - Packages info: the info of the package.
+            - Content: the data of the package.
+
+        NOTE: `n_package` = 18 * `n_weight_ram`.
+              `sram_start_addr` + `n_weight_ram` <= 512
+        """
+        if sram_start_addr + n_weight_ram > 512:
+            raise ValueError(
+                f"SRAM start address + number of weight rams exceeds the limit 512! {sram_start_addr + n_weight_ram}"
             )
+
+        info = super().GenRAMInfo(
+            sram_start_addr, PackageType.CONFIG, 18 * n_weight_ram
         )
+
+        contents = []
         if is_random:
-            for i in range(n_package):
-                params.append(random.randint(0, FM.GENERAL_MASK))
+            for i in range(n_weight_ram):
+                contents.append(random.randint(0, FM.GENERAL_MASK))
         else:
             raise NotImplementedError
 
-        return tuple(params)
+        return info, tuple(contents)
 
     GenRandomSeed = GenParamConfig1
     GenParamReg = GenParamConfig2

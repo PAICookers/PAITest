@@ -29,11 +29,12 @@ class FrameSubType(IntEnum):
     TEST_TYPE4 = 7
 
 
-class PayloadId(IntEnum):
-    """ID in payload for config and test in/out frame type III & IV"""
+class PackageType(IntEnum):
+    """ID in payload for config & test in/out frame type III & IV"""
     CONFIG = 0
     TEST_IN = 1
     TEST_OUT = 0
 
 
 CoordLike = TypeVar("CoordLike", Coord, Tuple[int, ...], List[int])
+FrameArray = TypeVar("FrameArray", List[int], Tuple[int, ...])
