@@ -121,7 +121,7 @@ class ParamGenOffline(ParamGen):
     def GenParamConfig3(
         sram_start_addr: int, n_neuron_ram: int, is_random: bool = True
     ) -> Tuple[int, Tuple[int, ...]]:
-        """Generate neuron RAM for configuration froame type III.
+        """Generate neuron RAM for configuration frame type III.
 
         Arguments:
             - sram_start_addr: the start address of SRAM.
@@ -140,14 +140,16 @@ class ParamGenOffline(ParamGen):
                 f"SRAM start address + number of neuron rams exceeds the limit 512! {sram_start_addr + n_neuron_ram}"
             )
 
-        info = super().GenRAMInfo(sram_start_addr, PackageType.CONFIG, 4 * n_neuron_ram)
+        n_package = 4 * n_neuron_ram
+        info = ParamGen.GenRAMInfo(sram_start_addr, PackageType.CONFIG, n_package)
 
         contents = []
         if is_random:
-            for i in range(3):
-                contents.append(random.randint(0, FM.GENERAL_MASK))
+            for i in range(n_neuron_ram):
+                for _ in range(3):
+                    contents.append(random.randint(0, FM.GENERAL_MASK))
 
-            contents.append(random.randint(0, (1 << 22) - 1))
+                contents.append(random.randint(0, (1 << 22) - 1))
         else:
             raise NotImplementedError
 
@@ -157,7 +159,7 @@ class ParamGenOffline(ParamGen):
     def GenParamConfig4(
         sram_start_addr: int, n_weight_ram: int, is_random: bool = True
     ) -> Tuple[int, Tuple[int, ...]]:
-        """Generate weight RAM for configuration frame IV.
+        """Generate weight RAM for configuration frame type IV.
 
         Arguments:
             - sram_start_addr: the start address of SRAM.
@@ -176,13 +178,12 @@ class ParamGenOffline(ParamGen):
                 f"SRAM start address + number of weight rams exceeds the limit 512! {sram_start_addr + n_weight_ram}"
             )
 
-        info = super().GenRAMInfo(
-            sram_start_addr, PackageType.CONFIG, 18 * n_weight_ram
-        )
+        n_package = 18 * n_weight_ram
+        info = ParamGen.GenRAMInfo(sram_start_addr, PackageType.CONFIG, n_package)
 
         contents = []
         if is_random:
-            for i in range(n_weight_ram):
+            for i in range(n_package):
                 contents.append(random.randint(0, FM.GENERAL_MASK))
         else:
             raise NotImplementedError
@@ -199,24 +200,138 @@ class ParamGenOnline(ParamGen):
     """Parameter generation methods for online cores"""
 
     @staticmethod
-    def GenParamConfig1():
-        """Generate LUT for configuration frame I"""
-        pass
+    def GenParamConfig1(is_random: bool = True, *LUT: int) -> Tuple[int, ...]:
+        """Generate LUT for configuration frame type I"""
+        params = []
+
+        if is_random:
+            for i in range(16):
+                params.append(random.randint(0, FM.GENERAL_PAYLOAD_MASK))
+        else:
+            raise NotImplementedError
+
+        return tuple(params)
 
     @staticmethod
-    def GenParamConfig2():
-        """Generate core parameter for configuration frame II"""
-        pass
+    def GenParamConfig2(
+        test_chip_coord: Coord,
+        is_random: bool = True,
+        *,
+        bit_select: Optional[int] = None,
+        group_select: Optional[int] = None,
+        lateral_inhi_value: Optional[int] = None,
+        weight_decay_value: Optional[int] = None,
+        upper_weight: Optional[int] = None,
+        lower_weight: Optional[int] = None,
+        neuron_start: Optional[int] = None,
+        neuron_end: Optional[int] = None,
+        inhi_core_x_star: Optional[int] = None,
+        inhi_core_y_star: Optional[int] = None,
+        core_start_time: Optional[int] = None,
+        core_hold_time: Optional[int] = None,
+        LUT_random_en: Optional[int] = None,
+        decay_Random_en: Optional[int] = None,
+        leakage_order: Optional[int] = None,
+        online_mode_en: Optional[int] = None,
+        random_seed: Optional[int] = None,
+    ) -> Tuple[int, ...]:
+        """Generate core parameter for configuration frame type II"""
+        params = []
+
+        if is_random:
+            for i in range(7):
+                params.append(random.randint(0, FM.GENERAL_PAYLOAD_MASK))
+
+            """Necessary constraint even if it is generated randomly"""
+            # 1'b0 on bit 28 of 7th frame.
+            _mask = (~(1 << 28)) & FM.GENERAL_PAYLOAD_MASK
+            params[6] &= _mask
+
+            # test_chip_address is on [25:16] of 7th frame.
+            _mask = (~(((1 << 10) - 1) << 16)) & FM.GENERAL_PAYLOAD_MASK
+            params[6] &= _mask
+            params[6] |= test_chip_coord.address << 16
+
+            # All zero of 8th frame.
+            params.append(0)
+        else:
+            raise NotImplementedError
+
+        return tuple(params)
 
     @staticmethod
-    def GenParamConfig3():
-        """Generate neuron RAM for configuration frame III"""
-        pass
+    def GenParamConfig3(
+        neuron_start_addr: int, n_neuron_ram: int, is_random: bool = True
+    ) -> Tuple[int, Tuple[int, ...]]:
+        """Generate neuron RAM for configuration frame type III.
+
+        Arguments:
+            - neuron_start_addr: the start address of neurons.
+            - n_neuron_ram: the number of neurons to be configured.
+            - is_random: whether to gererate parameters randomly.(not implemented yet)
+
+        For pattern III, the payload includes:
+            - Packages info: the info of the package.
+            - Content: the data of the package.
+
+        NOTE: `n_package` = 2 * `n_neuron_ram`.
+              `neuron_start_addr` + `n_neuron_ram` <= 1024.
+        """
+        if neuron_start_addr + n_neuron_ram > 1024:
+            raise ValueError(
+                f"Neurons start address + number of neuron rams exceeds the limit 1024! {neuron_start_addr + n_neuron_ram}"
+            )
+
+        n_package = 2 * n_neuron_ram
+        info = ParamGen.GenRAMInfo(neuron_start_addr, PackageType.CONFIG, n_package)
+
+        contents = []
+        if is_random:
+            for i in range(n_neuron_ram):
+                for _ in range(2):
+                    contents.append(random.randint(0, FM.GENERAL_MASK))
+        else:
+            raise NotImplementedError
+
+        return info, tuple(contents)
 
     @staticmethod
-    def GenParamConfig4():
-        """Generate weight RAM for configuration frame IV"""
-        pass
+    def GenParamConfig4(
+        neuron_start_addr: int, n_neuron_ram: int, is_random: bool = True
+    ) -> Tuple[int, Tuple[int, ...]]:
+        """Generate weight RAM for configuration frame type IV.
+
+        Arguments:
+            - neuron_start_addr: the start address of neurons.
+            - n_neuron_ram: the number of neurons to be configured.
+            - is_random: whether to gererate parameters randomly.(not implemented yet)
+
+        For pattern III, the payload includes:
+            - Packages info: the info of the package.
+            - Content: the data of the package.
+
+        NOTE: `n_package` = 16 * `n_neuron_ram`.
+              `neuron_start_addr` + `n_neuron_ram` <= 1024.
+        """
+        if neuron_start_addr + n_neuron_ram > 1024:
+            raise ValueError(
+                f"Neurons start address + number of neuron rams exceeds the limit 1024! {neuron_start_addr + n_neuron_ram}"
+            )
+
+        n_package = 16 * n_neuron_ram
+        n_ram_per_neuron = 8
+        info = ParamGen.GenRAMInfo(neuron_start_addr, PackageType.CONFIG, n_package)
+
+        contents = []
+        if is_random:
+            for i in range(n_neuron_ram):
+                for j in range(n_ram_per_neuron):
+                    for _ in range(2):
+                        contents.append(random.randint(0, FM.GENERAL_MASK))
+        else:
+            raise NotImplementedError
+
+        return info, tuple(contents)
 
     GenLUT = GenParamConfig1
     GenCoreParam = GenParamConfig2

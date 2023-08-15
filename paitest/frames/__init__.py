@@ -1,2 +1,2 @@
 from .frame import FrameGen as FrameGen, Frame as Frame
-from .params import ParamGenOffline as ParamGenOffline
+from .params import ParamGenOffline as ParamGenOffline, ParamGenOnline as ParamGenOnline
