@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Tuple
-from .params import ParamGenOffline
+from .params import ParamGenOffline, ParamGenOnline
 from .mask import FrameMask as FM
 from paitest.coord import Coord, ReplicationId
 from paitest._types import FrameSubType as FST, FrameArray, PackageType
@@ -301,7 +301,6 @@ class FrameGenOffline(FrameGen):
         chip_coord: Coord,
         core_coord: Coord,
         replication_id: ReplicationId,
-        *,
         param_reg: FrameArray,
     ) -> FrameGroup:
         return FrameGroup.GenFrameGroup(
@@ -314,12 +313,12 @@ class FrameGenOffline(FrameGen):
         chip_coord: Coord,
         core_coord: Coord,
         replication_id: ReplicationId,
-        sram_start_addr: int,
-        n_neurons: int,
+        sram_start_addr: int = 0,
+        n_neuron_ram: int = 512,
         is_random: bool = True,
     ) -> FramePackage:
         info, contents = ParamGenOffline.GenParamConfig3(
-            sram_start_addr, n_neurons, is_random
+            sram_start_addr, n_neuron_ram, is_random
         )
 
         return FramePackage.GenFramePackage(
@@ -332,8 +331,8 @@ class FrameGenOffline(FrameGen):
         chip_coord: Coord,
         core_coord: Coord,
         replication_id: ReplicationId,
-        sram_start_addr,
-        n_weight_ram: int = 18,
+        sram_start_addr: int = 0,
+        n_weight_ram: int = 512,
         is_random: bool = True,
     ) -> FramePackage:
         info, contents = ParamGenOffline.GenParamConfig4(
@@ -456,4 +455,66 @@ class FrameGenOffline(FrameGen):
 
         return FramePackage.GenFramePackage(
             FST.TEST_TYPE4, chip_coord, core_coord, replication_id, info, contents
+        )
+
+
+class FrameGenOnline(FrameGen):
+    @staticmethod
+    @abstractmethod
+    def GenConfigFrame1(
+        chip_coord: Coord,
+        core_coord: Coord,
+        replication_id: ReplicationId,
+        lut: FrameArray,
+    ) -> FrameGroup:
+        return FrameGroup.GenFrameGroup(
+            FST.CONFIG_TYPE1, chip_coord, core_coord, replication_id, lut
+        )
+
+    @staticmethod
+    @abstractmethod
+    def GenConfigFrame2(
+        chip_coord: Coord,
+        core_coord: Coord,
+        replication_id: ReplicationId,
+        core_reg: FrameArray,
+    ) -> FrameGroup:
+        return FrameGroup.GenFrameGroup(
+            FST.CONFIG_TYPE2, chip_coord, core_coord, replication_id, core_reg
+        )
+        
+    @staticmethod
+    @abstractmethod
+    def GenConfigFrame3(
+        chip_coord: Coord,
+        core_coord: Coord,
+        replication_id: ReplicationId,
+        neuron_start_addr: int = 0,
+        n_neuron_ram: int = 1024,
+        is_random: bool = True,
+    ) -> FramePackage:
+        info, contents = ParamGenOnline.GenParamConfig3(
+            neuron_start_addr, n_neuron_ram, is_random
+        )
+
+        return FramePackage.GenFramePackage(
+            FST.CONFIG_TYPE3, chip_coord, core_coord, replication_id, info, contents
+        )
+
+    @staticmethod
+    @abstractmethod
+    def GenConfigFrame4(
+        chip_coord: Coord,
+        core_coord: Coord,
+        replication_id: ReplicationId,
+        neuron_start_addr: int = 0,
+        n_neuron_ram: int = 1024,
+        is_random: bool = True,
+    ) -> FramePackage:
+        info, contents = ParamGenOnline.GenParamConfig4(
+            neuron_start_addr, n_neuron_ram, is_random
+        )
+
+        return FramePackage.GenFramePackage(
+            FST.CONFIG_TYPE4, chip_coord, core_coord, replication_id, info, contents
         )

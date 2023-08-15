@@ -58,9 +58,7 @@ class ParamGenOffline(ParamGen):
     """Parameter generation methods for offline cores"""
 
     @staticmethod
-    def GenParamConfig1(
-        is_random: bool = True, *, seed: Optional[int] = None
-    ) -> Tuple[int, ...]:
+    def GenParamConfig1(is_random: bool, seed: Optional[int] = None) -> Tuple[int, ...]:
         """Generate random seed for configuration frame & test output frame type I.
 
         Random seed = [30bit] + [30bit] + [26'b0 + 4bit]
@@ -87,7 +85,7 @@ class ParamGenOffline(ParamGen):
     @staticmethod
     def GenParamConfig2(
         test_chip_coord: Coord,
-        is_random: bool = True,
+        is_random: bool,
         *,
         weight_width: Optional[int] = None,
         lcn_type: Optional[int] = None,
@@ -119,7 +117,7 @@ class ParamGenOffline(ParamGen):
 
     @staticmethod
     def GenParamConfig3(
-        sram_start_addr: int, n_neuron_ram: int, is_random: bool = True
+        sram_start_addr: int, n_neuron_ram: int, is_random: bool
     ) -> Tuple[int, Tuple[int, ...]]:
         """Generate neuron RAM for configuration frame type III.
 
@@ -157,7 +155,7 @@ class ParamGenOffline(ParamGen):
 
     @staticmethod
     def GenParamConfig4(
-        sram_start_addr: int, n_weight_ram: int, is_random: bool = True
+        sram_start_addr: int, n_weight_ram: int, is_random: bool
     ) -> Tuple[int, Tuple[int, ...]]:
         """Generate weight RAM for configuration frame type IV.
 
@@ -200,7 +198,7 @@ class ParamGenOnline(ParamGen):
     """Parameter generation methods for online cores"""
 
     @staticmethod
-    def GenParamConfig1(is_random: bool = True, *LUT: int) -> Tuple[int, ...]:
+    def GenParamConfig1(is_random: bool, *LUT: int) -> Tuple[int, ...]:
         """Generate LUT for configuration frame type I"""
         params = []
 
@@ -215,7 +213,7 @@ class ParamGenOnline(ParamGen):
     @staticmethod
     def GenParamConfig2(
         test_chip_coord: Coord,
-        is_random: bool = True,
+        is_random: bool,
         *,
         bit_select: Optional[int] = None,
         group_select: Optional[int] = None,
@@ -261,7 +259,7 @@ class ParamGenOnline(ParamGen):
 
     @staticmethod
     def GenParamConfig3(
-        neuron_start_addr: int, n_neuron_ram: int, is_random: bool = True
+        neuron_start_addr: int, n_neuron_ram: int, is_random: bool
     ) -> Tuple[int, Tuple[int, ...]]:
         """Generate neuron RAM for configuration frame type III.
 
@@ -297,7 +295,7 @@ class ParamGenOnline(ParamGen):
 
     @staticmethod
     def GenParamConfig4(
-        neuron_start_addr: int, n_neuron_ram: int, is_random: bool = True
+        neuron_start_addr: int, n_neuron_ram: int, is_random: bool
     ) -> Tuple[int, Tuple[int, ...]]:
         """Generate weight RAM for configuration frame type IV.
 
