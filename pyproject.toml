@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "PAITest"
-version = "1.1.1"
+version = "2.0.0"
 description = "Test module for PAICORE 2.0"
 authors = ["KafCoppelia <k740677208@gmail.com>"]
 license = "MIT"
@@ -18,6 +18,9 @@ python = "^3.6"
 name = "tsinghua"
 url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 priority = "explicit"
+
+[tool.poetry.group.test.dependencies]
+pytest = {version = "^7.4.0", python = "^3.7"}
 
 [build-system]
 requires = ["poetry-core"]
