@@ -31,10 +31,6 @@ def bin_split(x: int, pos: int, high_mask: Optional[int] = None) -> Tuple[int, i
     >>> bin_split(0b1100001001, 3)
     97(0b1100001), 1
     """
-
-    if pos > x.bit_length():
-        raise ValueError("position is larger than the integer")
-
     low = x & ((1 << pos) - 1)
 
     if isinstance(high_mask, int):
@@ -95,7 +91,7 @@ def bin_combine_x(*components: int, pos: Union[int, List[int], Tuple[int, ...]])
     result = components[-1]
 
     # Traverse every position from the end to the start
-    for i in range(len(pos)-1, -1, -1):
+    for i in range(len(pos) - 1, -1, -1):
         result = bin_combine(components[i], result, pos[i])
 
     return result

@@ -18,6 +18,10 @@ class BinUtilsTestCase(unittest.TestCase):
                 else:
                     self.assertEqual(high, x // (2**i))
                     self.assertEqual(low, x % (2**i))
+                    
+        high, low = bin_split(4, 7)
+        self.assertEqual(high, 0)
+        self.assertEqual(low, 4)
 
     def test_bin_combine(self):
         n = 10
