@@ -138,7 +138,7 @@ class ParamGenOffline(ParamGen):
         """
         if sram_start_addr + n_neuron_ram > 512:
             raise ValueError(
-                f"SRAM start address + number of neuron rams exceeds the limit 512! {sram_start_addr + n_neuron_ram}"
+                f"SRAM start address + number of neuron rams exceeds the limit 512!({sram_start_addr + n_neuron_ram})"
             )
 
         n_package = 4 * n_neuron_ram
@@ -176,7 +176,7 @@ class ParamGenOffline(ParamGen):
         """
         if sram_start_addr + n_weight_ram > 512:
             raise ValueError(
-                f"SRAM start address + number of weight rams exceeds the limit 512! {sram_start_addr + n_weight_ram}"
+                f"SRAM start address + number of weight rams exceeds the limit 512!({sram_start_addr + n_weight_ram})"
             )
 
         n_package = 18 * n_weight_ram
@@ -280,7 +280,7 @@ class ParamGenOnline(ParamGen):
         """
         if neuron_start_addr + n_neuron_ram > 1024:
             raise ValueError(
-                f"Neurons start address + number of neuron rams exceeds the limit 1024! {neuron_start_addr + n_neuron_ram}"
+                f"Neurons start address + number of neuron rams exceeds the limit 1024!({neuron_start_addr + n_neuron_ram})"
             )
 
         n_package = 2 * n_neuron_ram
@@ -316,7 +316,7 @@ class ParamGenOnline(ParamGen):
         """
         if neuron_start_addr + n_neuron_ram > 1024:
             raise ValueError(
-                f"Neurons start address + number of neuron rams exceeds the limit 1024! {neuron_start_addr + n_neuron_ram}"
+                f"Neurons start address + number of neuron rams exceeds the limit 1024!({neuron_start_addr + n_neuron_ram})"
             )
 
         n_package = 16 * n_neuron_ram

@@ -2,8 +2,24 @@ from abc import ABC, abstractmethod
 from typing import Tuple
 from .params import ParamGenOffline, ParamGenOnline
 from .mask import FrameMask as FM
-from paitest.coord import Coord, ReplicationId
-from paitest._types import FrameSubType as FST, FrameArray, PackageType
+from paitest.coord import Coord, CoreType, ReplicationId
+from paitest._types import (
+    FrameMainType as FMT,
+    FrameSubType as FST,
+    FrameArray,
+    PackageType,
+)
+
+
+def sub2main_type(subtype: FST) -> FMT:
+    if subtype <= FST.CONFIG_TYPE4:
+        return FMT.FRAME_CONFIG
+    elif subtype <= FST.TEST_TYPE4:
+        return FMT.FRAME_TEST
+    elif subtype <= FST.WORK_TYPE4:
+        return FMT.FRAME_WORK
+
+    return FMT.FRAME_UNKNOWN
 
 
 class Frame:
@@ -11,7 +27,7 @@ class Frame:
 
     Single frame:
         [Header(sub type)] + [chip coordinate] + [core coordinate] + [replication id] + [payload]
-              4 bits             10 bits             10 bits             10 bits         30 bits
+            4 bits               10 bits             10 bits             10 bits         30 bits
     """
 
     def __init__(
@@ -20,17 +36,17 @@ class Frame:
         chip_coord: Coord,
         core_coord: Coord,
         replication_id: ReplicationId,
-        payload: int = 0,
+        payload: int,
     ) -> None:
         """
         Arguments:
-            - subtype: sub type of frame.
+            - subtype: sub type of the frame.
             - chip_coord: coordinate of the destination chip.
             - core_coord: coordinate of the destination core.
             - replication_id: the replication identifier.
             - payload: 30-bit data.
         """
-        self.subtype = subtype
+        self.sub_type = subtype
         self.chip_coord = chip_coord
         self.core_coord = core_coord
         self.replication_id = replication_id
@@ -43,7 +59,7 @@ class Frame:
         chip_coord: Coord,
         core_coord: Coord,
         replication_id: ReplicationId,
-        payload: int,
+        payload: int = 0,
     ) -> "Frame":
         return cls(subtype, chip_coord, core_coord, replication_id, payload)
 
@@ -55,12 +71,16 @@ class Frame:
         return 1
 
     @property
-    def frame_type(self) -> FST:
-        return self.subtype
+    def main_type(self) -> FMT:
+        return sub2main_type(self.sub_type)
+
+    @property
+    def core_type(self) -> CoreType:
+        return self.core_coord.core_type
 
     @property
     def header(self) -> FST:
-        return self.subtype
+        return self.sub_type
 
     @property
     def chip_address(self) -> int:
@@ -95,6 +115,17 @@ class Frame:
     def _fill_payload(self, payload: int) -> int:
         return self.frame_common + payload & FM.GENERAL_PAYLOAD_MASK
 
+    def __repr__(self) -> str:
+        return (
+            f"Frame info:\n"
+            f"Test for:         {self.core_type.value}\n"
+            f"Subtype:          {self.sub_type}\n"
+            f"Chip address:     {self.chip_coord}\n"
+            f"Core address:     {self.core_coord}\n"
+            f"Replication ID:   {self.replication_id}\n"
+            f"Payload:          {self.payload}\n"
+        )
+
 
 class FrameGroup(Frame):
     """A group of frames of which the payload is split into `N` parts,
@@ -115,7 +146,7 @@ class FrameGroup(Frame):
         replication_id: ReplicationId,
         payload: FrameArray,
     ) -> None:
-        super().__init__(subtype, chip_coord, core_coord, replication_id)
+        super().__init__(subtype, chip_coord, core_coord, replication_id, 0)
 
         self._length = len(payload)
         self.payload = payload
@@ -129,19 +160,22 @@ class FrameGroup(Frame):
         replication_id: ReplicationId,
         payload: FrameArray,
     ) -> "FrameGroup":
-        return cls(subtype, chip_coord, core_coord, replication_id, payload)
+        return cls(
+            subtype,
+            chip_coord,
+            core_coord,
+            replication_id,
+            payload,
+        )
 
     def __getitem__(self, item) -> Frame:
         return super().GenFrame(
-            self.subtype,
+            self.sub_type,
             self.chip_coord,
             self.core_coord,
             self.replication_id,
             self.payload[item],
         )
-
-    def __len__(self) -> int:
-        return self.length
 
     @property
     def length(self) -> int:
@@ -149,11 +183,27 @@ class FrameGroup(Frame):
 
     @property
     def value(self) -> Tuple[int, ...]:
+        """Get the full frames of the group."""
         val_list = []
         for load in self.payload:
             val_list.append(self._fill_payload(load))
 
         return tuple(val_list)
+
+    def __repr__(self):
+        _present = (
+            f"FrameGroup info:\n"
+            f"Type:             {self.sub_type}\n"
+            f"Chip address:     {self.chip_coord}\n"
+            f"Core address:     {self.core_coord}\n"
+            f"Replication ID:   {self.replication_id}\n"
+            f"Payload:\n"
+        )
+
+        for i in range(self.length):
+            _present += f"#{i}: {self.payload[i]}\n"
+
+        return _present
 
 
 class FramePackage(Frame):
@@ -195,23 +245,57 @@ class FramePackage(Frame):
         info: int,
         contents: FrameArray,
     ) -> "FramePackage":
-        return cls(subtype, chip_coord, core_coord, replication_id, info, contents)
-
-    def __len__(self) -> int:
-        return self.length
+        return cls(
+            subtype,
+            chip_coord,
+            core_coord,
+            replication_id,
+            info,
+            contents,
+        )
 
     @property
     def length(self) -> int:
         return self._length
 
     @property
+    def start_addr(self) -> int:
+        return (
+            self._info >> FM.GENERAL_PACKAGE_SRAM_START_ADDR_OFFSET
+        ) & FM.GENERAL_PACKAGE_SRAM_START_ADDR_MASK
+
+    @property
+    def n_package(self) -> int:
+        return (
+            self._info >> FM.GENERAL_PACKAGE_COUNT_OFFSET
+        ) & FM.GENERAL_PACKAGE_COUNT_MASK
+
+    @property
     def value(self) -> Tuple[int, ...]:
+        """Get the full frames of the package."""
         val_list = []
 
         val_list.append(self._fill_payload(self.payload))
         val_list.extend(self.content)
 
         return tuple(val_list)
+
+    def __repr__(self):
+        _present = (
+            f"FrameGroup info:\n"
+            f"Type:             {self.sub_type}\n"
+            f"Chip address:     {self.chip_coord}\n"
+            f"Core address:     {self.core_coord}\n"
+            f"Replication ID:   {self.replication_id}\n"
+            f"Start address:  {self.start_addr}\n"
+            f"Packages:       {self.n_package}\n"
+            f"Data:\n"
+        )
+
+        for i in range(self.length):
+            _present += f"#{i}: {self.content[i]}"
+
+        return _present
 
 
 class FrameGen(ABC):
@@ -237,11 +321,8 @@ class FrameGen(ABC):
 
     @staticmethod
     @abstractmethod
-    def GenTestInFrame1(
-        chip_coord: Coord, core_coord: Coord, replication_id: ReplicationId
-    ) -> Frame:
-        """Test input frame type I. Generic for offline & onlines."""
-        return Frame.GenFrame(FST.TEST_TYPE1, chip_coord, core_coord, replication_id, 0)
+    def GenTestInFrame1() -> Frame:
+        raise NotImplementedError
 
     @staticmethod
     @abstractmethod
@@ -250,15 +331,12 @@ class FrameGen(ABC):
 
     @staticmethod
     @abstractmethod
-    def GenTestInFrame2(
-        chip_coord: Coord, core_coord: Coord, replication_id: ReplicationId
-    ) -> Frame:
-        """Test output frame type II. Generic for offline & onlines."""
-        return Frame.GenFrame(FST.TEST_TYPE2, chip_coord, core_coord, replication_id, 0)
+    def GenTestInFrame2() -> Frame:
+        return NotImplementedError
 
     @staticmethod
     @abstractmethod
-    def GenTestOutFrame2() -> FramePackage:
+    def GenTestOutFrame2() -> FrameGroup:
         raise NotImplementedError
 
     @staticmethod
@@ -268,7 +346,7 @@ class FrameGen(ABC):
 
     @staticmethod
     @abstractmethod
-    def GenTestOutFrame3() -> FrameArray:
+    def GenTestOutFrame3() -> FramePackage:
         raise NotImplementedError
 
     @staticmethod
@@ -278,13 +356,12 @@ class FrameGen(ABC):
 
     @staticmethod
     @abstractmethod
-    def GenTestOutFrame4() -> FrameArray:
+    def GenTestOutFrame4() -> FramePackage:
         raise NotImplementedError
 
 
 class FrameGenOffline(FrameGen):
     @staticmethod
-    @abstractmethod
     def GenConfigFrame1(
         chip_coord: Coord,
         core_coord: Coord,
@@ -292,11 +369,14 @@ class FrameGenOffline(FrameGen):
         random_seed: FrameArray,
     ) -> FrameGroup:
         return FrameGroup.GenFrameGroup(
-            FST.CONFIG_TYPE1, chip_coord, core_coord, replication_id, random_seed
+            FST.CONFIG_TYPE1,
+            chip_coord,
+            core_coord,
+            replication_id,
+            random_seed,
         )
 
     @staticmethod
-    @abstractmethod
     def GenConfigFrame2(
         chip_coord: Coord,
         core_coord: Coord,
@@ -304,11 +384,14 @@ class FrameGenOffline(FrameGen):
         param_reg: FrameArray,
     ) -> FrameGroup:
         return FrameGroup.GenFrameGroup(
-            FST.CONFIG_TYPE2, chip_coord, core_coord, replication_id, param_reg
+            FST.CONFIG_TYPE2,
+            chip_coord,
+            core_coord,
+            replication_id,
+            param_reg,
         )
 
     @staticmethod
-    @abstractmethod
     def GenConfigFrame3(
         chip_coord: Coord,
         core_coord: Coord,
@@ -322,11 +405,15 @@ class FrameGenOffline(FrameGen):
         )
 
         return FramePackage.GenFramePackage(
-            FST.CONFIG_TYPE3, chip_coord, core_coord, replication_id, info, contents
+            FST.CONFIG_TYPE3,
+            chip_coord,
+            core_coord,
+            replication_id,
+            info,
+            contents,
         )
 
     @staticmethod
-    @abstractmethod
     def GenConfigFrame4(
         chip_coord: Coord,
         core_coord: Coord,
@@ -340,35 +427,68 @@ class FrameGenOffline(FrameGen):
         )
 
         return FramePackage.GenFramePackage(
-            FST.CONFIG_TYPE4, chip_coord, core_coord, replication_id, info, contents
+            FST.CONFIG_TYPE4,
+            chip_coord,
+            core_coord,
+            replication_id,
+            info,
+            contents,
         )
 
     @staticmethod
-    @abstractmethod
+    def GenTestInFrame1(
+        chip_coord: Coord, core_coord: Coord, replication_id: ReplicationId
+    ) -> Frame:
+        """Test input frame type I"""
+        return Frame.GenFrame(
+            FST.TEST_TYPE1,
+            chip_coord,
+            core_coord,
+            replication_id,
+        )
+
+    @staticmethod
     def GenTestOutFrame1(
         test_chip_coord: Coord,
         core_coord: Coord,
         replication_id: ReplicationId,
         random_seed: FrameArray,
-    ) -> FramePackage:
+    ) -> FrameGroup:
         return FrameGroup.GenFrameGroup(
-            FST.TEST_TYPE1, test_chip_coord, core_coord, replication_id, random_seed
+            FST.TEST_TYPE1,
+            test_chip_coord,
+            core_coord,
+            replication_id,
+            random_seed,
         )
 
     @staticmethod
-    @abstractmethod
+    def GenTestInFrame2(
+        chip_coord: Coord, core_coord: Coord, replication_id: ReplicationId
+    ) -> Frame:
+        return Frame.GenFrame(
+            FST.TEST_TYPE2,
+            chip_coord,
+            core_coord,
+            replication_id,
+        )
+
+    @staticmethod
     def GenTestOutFrame2(
         test_chip_coord: Coord,
         core_coord: Coord,
         replication_id: ReplicationId,
         param_reg: FrameArray,
-    ) -> FramePackage:
+    ) -> FrameGroup:
         return FrameGroup.GenFrameGroup(
-            FST.TEST_TYPE2, test_chip_coord, core_coord, replication_id, param_reg
+            FST.TEST_TYPE2,
+            test_chip_coord,
+            core_coord,
+            replication_id,
+            param_reg,
         )
 
     @staticmethod
-    @abstractmethod
     def GenTestInFrame3(
         chip_coord: Coord,
         core_coord: Coord,
@@ -378,7 +498,7 @@ class FrameGenOffline(FrameGen):
     ) -> Frame:
         if sram_start_addr + n_neuron_ram > 512:
             raise ValueError(
-                f"SRAM start address + number of neurons exceeds the limit 512! {sram_start_addr + n_neuron_ram}"
+                f"SRAM start address + number of neurons exceeds the limit 512!({sram_start_addr + n_neuron_ram})"
             )
 
         info = ParamGenOffline.GenRAMInfo(
@@ -386,13 +506,16 @@ class FrameGenOffline(FrameGen):
         )
 
         return Frame.GenFrame(
-            FST.TEST_TYPE3, chip_coord, core_coord, replication_id, info
+            FST.TEST_TYPE3,
+            chip_coord,
+            core_coord,
+            replication_id,
+            info,
         )
 
     @staticmethod
-    @abstractmethod
     def GenTestOutFrame3(
-        chip_coord: Coord,
+        test_chip_coord: Coord,
         core_coord: Coord,
         replication_id: ReplicationId,
         sram_start_addr: int,
@@ -401,7 +524,7 @@ class FrameGenOffline(FrameGen):
     ) -> FramePackage:
         if sram_start_addr + n_neuron_ram > 512:
             raise ValueError(
-                f"SRAM start address + number of neurons exceeds the limit 512! {sram_start_addr + n_neuron_ram}"
+                f"SRAM start address + number of neurons exceeds the limit 512!({sram_start_addr + n_neuron_ram})"
             )
 
         info = ParamGenOffline.GenRAMInfo(
@@ -409,11 +532,10 @@ class FrameGenOffline(FrameGen):
         )
 
         return FramePackage.GenFramePackage(
-            FST.TEST_TYPE3, chip_coord, core_coord, replication_id, info, contents
+            FST.TEST_TYPE3, test_chip_coord, core_coord, replication_id, info, contents
         )
 
     @staticmethod
-    @abstractmethod
     def GenTestInFrame4(
         chip_coord: Coord,
         core_coord: Coord,
@@ -423,7 +545,7 @@ class FrameGenOffline(FrameGen):
     ) -> Frame:
         if sram_start_addr + n_weight_ram > 512:
             raise ValueError(
-                f"SRAM start address + number of weight rams exceeds the limit 512! {sram_start_addr + n_weight_ram}"
+                f"SRAM start address + number of weight rams exceeds the limit 512!({sram_start_addr + n_weight_ram})"
             )
 
         info = ParamGenOffline.GenRAMInfo(
@@ -435,9 +557,8 @@ class FrameGenOffline(FrameGen):
         )
 
     @staticmethod
-    @abstractmethod
     def GenTestOutFrame4(
-        chip_coord: Coord,
+        test_chip_coord: Coord,
         core_coord: Coord,
         replication_id: ReplicationId,
         sram_start_addr: int,
@@ -446,7 +567,7 @@ class FrameGenOffline(FrameGen):
     ) -> FramePackage:
         if sram_start_addr + n_weight_ram > 512:
             raise ValueError(
-                f"SRAM start address + number of weight rams exceeds the limit 512! {sram_start_addr + n_weight_ram}"
+                f"SRAM start address + number of weight rams exceeds the limit 512!({sram_start_addr + n_weight_ram})"
             )
 
         info = ParamGenOffline.GenRAMInfo(
@@ -454,13 +575,12 @@ class FrameGenOffline(FrameGen):
         )
 
         return FramePackage.GenFramePackage(
-            FST.TEST_TYPE4, chip_coord, core_coord, replication_id, info, contents
+            FST.TEST_TYPE4, test_chip_coord, core_coord, replication_id, info, contents
         )
 
 
 class FrameGenOnline(FrameGen):
     @staticmethod
-    @abstractmethod
     def GenConfigFrame1(
         chip_coord: Coord,
         core_coord: Coord,
@@ -472,7 +592,6 @@ class FrameGenOnline(FrameGen):
         )
 
     @staticmethod
-    @abstractmethod
     def GenConfigFrame2(
         chip_coord: Coord,
         core_coord: Coord,
@@ -482,9 +601,8 @@ class FrameGenOnline(FrameGen):
         return FrameGroup.GenFrameGroup(
             FST.CONFIG_TYPE2, chip_coord, core_coord, replication_id, core_reg
         )
-        
+
     @staticmethod
-    @abstractmethod
     def GenConfigFrame3(
         chip_coord: Coord,
         core_coord: Coord,
@@ -502,7 +620,6 @@ class FrameGenOnline(FrameGen):
         )
 
     @staticmethod
-    @abstractmethod
     def GenConfigFrame4(
         chip_coord: Coord,
         core_coord: Coord,
@@ -517,4 +634,146 @@ class FrameGenOnline(FrameGen):
 
         return FramePackage.GenFramePackage(
             FST.CONFIG_TYPE4, chip_coord, core_coord, replication_id, info, contents
+        )
+
+    @staticmethod
+    def GenTestInFrame1(
+        chip_coord: Coord, core_coord: Coord, replication_id: ReplicationId
+    ) -> Frame:
+        return Frame.GenFrame(
+            FST.TEST_TYPE1,
+            chip_coord,
+            core_coord,
+            replication_id,
+        )
+
+    @staticmethod
+    def GenTestOutFrame1(
+        test_chip_coord: Coord,
+        core_coord: Coord,
+        replication_id: ReplicationId,
+        lut: FrameArray,
+    ) -> FrameGroup:
+        return FrameGroup.GenFrameGroup(
+            FST.TEST_TYPE1, test_chip_coord, core_coord, replication_id, lut
+        )
+
+    @staticmethod
+    def GenTestInFrame2(
+        chip_coord: Coord, core_coord: Coord, replication_id: ReplicationId
+    ) -> Frame:
+        return Frame.GenFrame(
+            FST.TEST_TYPE2,
+            chip_coord,
+            core_coord,
+            replication_id,
+        )
+
+    @staticmethod
+    def GenTestOutFrame2(
+        test_chip_coord: Coord,
+        core_coord: Coord,
+        replication_id: ReplicationId,
+        core_reg: FrameArray,
+    ) -> Frame:
+        return FrameGroup.GenFrameGroup(
+            FST.TEST_TYPE2, test_chip_coord, core_coord, replication_id, core_reg
+        )
+
+    @staticmethod
+    def GenTestInFrame3(
+        chip_coord: Coord,
+        core_coord: Coord,
+        replication_id: ReplicationId,
+        neuron_start_addr: int,
+        n_neuron_ram: int,
+    ) -> Frame:
+        if neuron_start_addr + n_neuron_ram > 1024:
+            raise ValueError(
+                f"Neurons start address + number of neuron rams exceeds the limit 1024!({neuron_start_addr + n_neuron_ram})"
+            )
+
+        n_package = 2 * n_neuron_ram
+        info = ParamGenOnline.GenRAMInfo(
+            neuron_start_addr, PackageType.TEST_IN, n_package
+        )
+
+        return Frame.GenFrame(
+            FST.TEST_TYPE3,
+            chip_coord,
+            core_coord,
+            replication_id,
+            info,
+        )
+
+    @staticmethod
+    def GenTestOutFrame3(
+        test_chip_coord: Coord,
+        core_coord: Coord,
+        replication_id: ReplicationId,
+        neuron_start_addr: int,
+        n_neuron_ram: int,
+        contents: FrameArray,
+    ) -> Frame:
+        if neuron_start_addr + n_neuron_ram > 1024:
+            raise ValueError(
+                f"Neurons start address + number of neuron rams exceeds the limit 1024!({neuron_start_addr + n_neuron_ram})"
+            )
+
+        n_package = 2 * n_neuron_ram
+        info = ParamGenOnline.GenRAMInfo(
+            neuron_start_addr, PackageType.TEST_OUT, n_package
+        )
+
+        return FramePackage.GenFramePackage(
+            FST.TEST_TYPE3, test_chip_coord, core_coord, replication_id, info, contents
+        )
+
+    @staticmethod
+    def GenTestInFrame4(
+        chip_coord: Coord,
+        core_coord: Coord,
+        replication_id: ReplicationId,
+        neuron_start_addr: int,
+        n_neuron_ram: int,
+    ) -> Frame:
+        if neuron_start_addr + n_neuron_ram > 1024:
+            raise ValueError(
+                f"Neurons start address + number of neuron rams exceeds the limit 1024!({neuron_start_addr + n_neuron_ram})"
+            )
+
+        n_package = 16 * n_neuron_ram
+        info = ParamGenOnline.GenRAMInfo(
+            neuron_start_addr, PackageType.TEST_IN, n_package
+        )
+
+        return Frame.GenFrame(
+            FST.TEST_TYPE4,
+            chip_coord,
+            core_coord,
+            replication_id,
+            info,
+        )
+
+    @staticmethod
+    def GenTestOutFrame4(
+        test_chip_coord: Coord,
+        core_coord: Coord,
+        replication_id: ReplicationId,
+        neuron_start_addr: int,
+        n_neuron_ram: int,
+        contents: FrameArray,
+    ) -> Frame:
+        if neuron_start_addr + n_neuron_ram > 1024:
+            raise ValueError(
+                f"Neurons start address + number of neuron rams exceeds the limit 1024!({neuron_start_addr + n_neuron_ram})"
+            )
+
+        n_package = 16 * n_neuron_ram
+        info = ParamGenOnline.GenRAMInfo(
+            neuron_start_addr, PackageType.TEST_IN, n_package
+        )
+
+        return FramePackage.GenFramePackage(
+            FST.TEST_TYPE4, test_chip_coord, core_coord, replication_id, info, contents
         )
