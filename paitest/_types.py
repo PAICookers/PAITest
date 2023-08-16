@@ -4,8 +4,8 @@ from paitest.coord import Coord
 
 
 @unique
-class FrameType(Enum):
-    """Types of Frames"""
+class FrameMainType(Enum):
+    """Main types of Frames"""
 
     FRAME_CONFIG = 0
     FRAME_TEST = 1
@@ -15,18 +15,24 @@ class FrameType(Enum):
 
 @unique
 class FrameSubType(IntEnum):
-    """Sub-types of Configuration Frames"""
+    """Sub-types of configuration frames"""
 
     CONFIG_TYPE1 = 0
     CONFIG_TYPE2 = 1
     CONFIG_TYPE3 = 2
     CONFIG_TYPE4 = 3
 
-    """Sub-types of Test Frames"""
+    """Sub-types of test frames"""
     TEST_TYPE1 = 4
     TEST_TYPE2 = 5
     TEST_TYPE3 = 6
     TEST_TYPE4 = 7
+    
+    """Sub-types of working frames"""
+    WORK_TYPE1 = 8
+    WORK_TYPE2 = 9
+    WORK_TYPE3 = 10
+    WORK_TYPE4 = 11
 
 
 class PackageType(IntEnum):

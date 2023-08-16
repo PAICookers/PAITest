@@ -43,13 +43,16 @@ class ParamGen(ABC):
 
     @staticmethod
     def GenRAMInfo(start_addr: int, _type: PackageType, n_package: int) -> int:
+        """Generate a certain package information of a `FramePackage`,
+        for offline & online both.
+        """
         return bin_combine_x(
             start_addr,
             _type.value,
             n_package,
             pos=[
-                OFF_CFM.GENERAL_PACKAGE_SRAM_START_ADDR_OFFSET,
-                OFF_CFM.GENERAL_PACKAGE_TYPE_OFFSET,
+                FM.GENERAL_PACKAGE_SRAM_START_ADDR_OFFSET,
+                FM.GENERAL_PACKAGE_TYPE_OFFSET,
             ],
         )
 

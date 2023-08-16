@@ -4,8 +4,8 @@ from typing import Optional, Tuple, Union, overload
 
 @unique
 class CoreType(Enum):
-    TYPE_OFFLINE = 1
-    TYPE_ONLINE = 0
+    TYPE_OFFLINE = "OFFLINE"
+    TYPE_ONLINE = "ONLINE"
 
 
 class Coord:
@@ -39,7 +39,9 @@ class Coord:
             and self._COORD_LOW_LIMIT <= y <= self._COORD_MAX_LIMIT
         ):
             raise ValueError(
-                f"{self._COORD_LOW_LIMIT} <= x <= {self._COORD_MAX_LIMIT}, {self._COORD_LOW_LIMIT} <= y <= {self._COORD_MAX_LIMIT}: ({x}, {y})"
+                f"{self._COORD_LOW_LIMIT} <= x <= {self._COORD_MAX_LIMIT}, "
+                f"{self._COORD_LOW_LIMIT} <= y <= {self._COORD_MAX_LIMIT}: "
+                f"({x}, {y})"
             )
 
         self.x: int = x
@@ -174,10 +176,10 @@ class Coord:
         return self.__gt__(__other) or self.__eq__(__other)
 
     def __str__(self) -> str:
-        return f"({self.x}, {self.y})"
+        return f"Coord({self.x}, {self.y})"
 
     def __repr__(self) -> str:
-        return f"Coord({self.x}, {self.y})"
+        return "{:05b}, {:05b}".format(self.x, self.y)
 
     def to_tuple(self) -> Tuple[int, int]:
         """Convert to tuple"""
@@ -208,7 +210,9 @@ class CoordOffset:
             and self._COORDOFFSET_LOW_LIMIT < _delta_y <= self._COORDOFFSET_MAX_LIMIT
         ):
             raise ValueError(
-                f"{self._COORDOFFSET_LOW_LIMIT} < delta_x <= {self._COORDOFFSET_MAX_LIMIT}, {self._COORDOFFSET_LOW_LIMIT} < delta_y <= {self._COORDOFFSET_MAX_LIMIT}: ({_delta_x}, {_delta_y})"
+                f"{self._COORDOFFSET_LOW_LIMIT} < delta_x <= {self._COORDOFFSET_MAX_LIMIT}, "
+                f"{self._COORDOFFSET_LOW_LIMIT} < delta_y <= {self._COORDOFFSET_MAX_LIMIT}: "
+                f"({_delta_x}, {_delta_y})"
             )
 
         self.delta_x: int = _delta_x
