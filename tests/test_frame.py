@@ -1,88 +1,47 @@
-import unittest
-from paitest.utils import bin_combine_x, bin_split, bin_combine
+import random
+import pytest
+
+from paitest.coord import Coord
+from paitest.frames import FrameGenOffline, FrameGenOnline
+from paitest.frames import ParamGenOffline
+from paitest.frames.mask import FrameMask as FM
+from paitest._types import FrameSubType as FST
 
 
-class BinUtilsTestCase(unittest.TestCase):
-    def test_bin_split(self):
-        n = 10
-        for x in range(0, (1 << n) - 1):
-            for i in range(x.bit_length() + 1):
-                high, low = bin_split(x, i)
+@pytest.mark.parametrize("random_seed", [random.randint(0, FM.GENERAL_MASK)])
+def test_Offline_GenConfigFrame1(random_seed):
+    params = ParamGenOffline.GenParamConfig1(False, random_seed)
+    config1 = FrameGenOffline.GenConfigFrame1(
+        Coord(0, 0), Coord(1, 1), Coord(2, 2), params
+    )
 
-                if i == 0:
-                    self.assertEqual(high, x)
-                    self.assertEqual(low, 0)
-                elif i == n:
-                    self.assertEqual(high, 0)
-                    self.assertEqual(low, x)
-                else:
-                    self.assertEqual(high, x // (2**i))
-                    self.assertEqual(low, x % (2**i))
-                    
-        high, low = bin_split(4, 7)
-        self.assertEqual(high, 0)
-        self.assertEqual(low, 4)
+    assert config1.length == 3
+    assert config1.sub_type == FST.CONFIG_TYPE1
+    assert config1.chip_address == 0
+    assert config1.core_address == 0b100001
 
-    def test_bin_combine(self):
-        n = 10
-        for x in range(0, (1 << n) - 1):
-            for y in range(0, (1 << n) - 1):
-                if y == 0:
-                    with self.assertRaises(ValueError):
-                        comb = bin_combine(x, y, -1)
+    payloads = config1.payload
+    seed = (payloads[0] << 34) + (payloads[1] << 4) + payloads[2]
 
-                    comb = bin_combine(x, y, 0)
-                    self.assertEqual(comb, x)
-                else:
-                    with self.assertRaises(ValueError):
-                        bin_combine(x, y, y.bit_length() - 1)
-
-                comb = bin_combine(x, y, n)
-                self.assertEqual(comb, (x << n) | y)
-
-    def test_bin_combine_x(self):
-        n = 5
-        for x in range(0, (1 << n) - 1):
-            for y in range(0, (1 << n) - 1):
-                for z in range(0, (1 << n) - 1):
-                    for k in range(0, (1 << n) - 1):
-                        comb = bin_combine_x(x, y, pos=n)
-                        self.assertEqual(comb, (x << n) | y)
-
-                        comb = bin_combine_x(x, y, pos=[n])
-                        self.assertEqual(comb, (x << n) | y)
-
-                        with self.assertRaises(ValueError):
-                            bin_combine_x(x, pos=[1, 2])
-
-                        with self.assertRaises(ValueError):
-                            bin_combine_x(x, y, z, pos=1)
-
-                        with self.assertRaises(ValueError):
-                            bin_combine_x(x, y, z, k, pos=[1, 2])
-
-                        with self.assertRaises(ValueError):
-                            comb = bin_combine_x(x, y, z, k, pos=[n * 3, n * 2, -1])
-
-                        comb = bin_combine_x(x, y, z, k, pos=[n * 3, n * 2, n])
-                        self.assertEqual(
-                            comb, ((x << (n * 3)) + (y << (n * 2)) + (z << n) + k)
-                        )
-
-                        comb = bin_combine_x(
-                            x, y, z, k, pos=[3 * n + 2, 2 * n + 1, n + 1]
-                        )
-                        self.assertEqual(
-                            comb,
-                            (
-                                (x << (3 * n + 2))
-                                + (y << (2 * n + 1))
-                                + (z << (n + 1))
-                                + k
-                            ),
-                        )
+    assert random_seed == seed
 
 
-class FrameTestCase(unittest.TestCase):
-    def foo(self):
-        pass
+@pytest.mark.parametrize(
+    "test_chip_coord", [Coord(1, 1), Coord(20, 10), Coord(0, 1), Coord(1, 0)]
+)
+def test_Offline_GenConfigFrame2(test_chip_coord: Coord):
+    params = ParamGenOffline.GenParamConfig2(test_chip_coord, True)
+    config1 = FrameGenOffline.GenConfigFrame2(
+        Coord(0, 0), Coord(1, 1), Coord(3, 4), params
+    )
+
+    assert config1.length == 3
+    assert config1.sub_type == FST.CONFIG_TYPE2
+    assert config1.chip_address == 0
+    assert config1.core_coord == Coord(1, 1)
+    assert config1.replication_id == Coord(3, 4)
+
+    payloads = config1.value
+    now = ((payloads[1] & ((1 << 3) - 1)) << 7) + (payloads[2] >> 23)
+
+    assert test_chip_coord.address == now
