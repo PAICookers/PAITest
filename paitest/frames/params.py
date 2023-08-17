@@ -129,6 +129,10 @@ class ParamGenOffline(ParamGen):
             - n_neuron_ram: the number of neurons to be configured.
             - is_random: whether to gererate parameters randomly.(not implemented yet)
 
+        Return:
+            - info: the information of the package.
+            - contents: the data of the package.
+
         For pattern III, the payload includes:
             - Packages info: the info of the package.
             - Content: the data of the package.
@@ -167,6 +171,10 @@ class ParamGenOffline(ParamGen):
             - n_weight_ram: the number of weights to be configured.
             - is_random: whether to gererate parameters randomly.(not implemented yet)
 
+        Return:
+            - info: the information of the package.
+            - contents: the data of the package.
+
         For pattern IV, the payload includes:
             - Packages info: the info of the package.
             - Content: the data of the package.
@@ -191,6 +199,7 @@ class ParamGenOffline(ParamGen):
 
         return info, tuple(contents)
 
+    """Methods alias"""
     GenRandomSeed = GenParamConfig1
     GenParamReg = GenParamConfig2
     GenNeuronRAM = GenParamConfig3
@@ -334,6 +343,7 @@ class ParamGenOnline(ParamGen):
 
         return info, tuple(contents)
 
+    """Methods alias"""
     GenLUT = GenParamConfig1
     GenCoreParam = GenParamConfig2
     GenNeuronRAM = GenParamConfig3
