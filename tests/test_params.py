@@ -31,7 +31,7 @@ def test_Offline_GenParamConfig1(seed1, seed2, seed3):
     assert params[2].bit_length() < 5
 
     for i in range(100):
-        params = ParamGenOffline.GenParamConfig1()
+        params = ParamGenOffline.GenParamConfig1(True)
         assert params[2].bit_length() < 5
 
 
@@ -40,7 +40,7 @@ def test_Offline_GenParamConfig1(seed1, seed2, seed3):
     [Coord(4, 0), Coord(12, 12), Coord(24, 8), Coord(0, 0), Coord(0, 7)],
 )
 def test_Offiline_GenParamConfig2(test_chip_coord):
-    params = ParamGenOffline.GenParamReg(test_chip_coord)
+    params = ParamGenOffline.GenParamReg(test_chip_coord, True)
 
     assert len(params) == 3
 
@@ -55,7 +55,7 @@ def test_Offiline_GenParamConfig2(test_chip_coord):
     "sram_start_addr, n_neuron_ram", [(0, 100), (0, 512), (100, 200), (200, 312)]
 )
 def test_Offiline_GenParamConfig3(sram_start_addr, n_neuron_ram):
-    info, contents = ParamGenOffline.GenNeuronRAM(sram_start_addr, n_neuron_ram)
+    info, contents = ParamGenOffline.GenNeuronRAM(sram_start_addr, n_neuron_ram, True)
 
     assert len(contents) == 4 * n_neuron_ram
     assert sram_start_addr == info >> 20
@@ -63,17 +63,17 @@ def test_Offiline_GenParamConfig3(sram_start_addr, n_neuron_ram):
     assert 0 == ((info >> 19) & 1)
 
     with pytest.raises(ValueError):
-        ParamGenOffline.GenParamConfig3(0, 513)
+        ParamGenOffline.GenParamConfig3(0, 513, True)
         
     with pytest.raises(ValueError):
-        ParamGenOffline.GenParamConfig3(100, 500)
+        ParamGenOffline.GenParamConfig3(100, 500, True)
         
 
 @pytest.mark.parametrize(
     "sram_start_addr, n_weight_ram", [(0, 100), (0, 512), (100, 200), (200, 312)]
 )
 def test_Offiline_GenParamConfig4(sram_start_addr, n_weight_ram):
-    info, contents = ParamGenOffline.GenWeightRAM(sram_start_addr, n_weight_ram)
+    info, contents = ParamGenOffline.GenWeightRAM(sram_start_addr, n_weight_ram, True)
     
     assert len(contents) == 18 * n_weight_ram
     assert sram_start_addr == info >> 20
@@ -81,10 +81,10 @@ def test_Offiline_GenParamConfig4(sram_start_addr, n_weight_ram):
     assert 0 == ((info >> 19) & 1)
 
     with pytest.raises(ValueError):
-        ParamGenOffline.GenParamConfig3(0, 513)
+        ParamGenOffline.GenParamConfig3(0, 513, True)
         
     with pytest.raises(ValueError):
-        ParamGenOffline.GenParamConfig3(100, 500)
+        ParamGenOffline.GenParamConfig3(100, 500, True)
         
 
 def test_Online_GenParamConfig1():
@@ -98,7 +98,7 @@ def test_Online_GenParamConfig1():
     [Coord(4, 0), Coord(12, 12), Coord(24, 8), Coord(0, 0), Coord(0, 7)],
 )
 def test_Online_GenParamConfig2(test_chip_coord: Coord):
-    params = ParamGenOnline.GenParamConfig2(test_chip_coord)
+    params = ParamGenOnline.GenParamConfig2(test_chip_coord, True)
     
     assert len(params) == 8
     assert params[7] == 0
@@ -110,7 +110,7 @@ def test_Online_GenParamConfig2(test_chip_coord: Coord):
     "neuron_start_addr, n_neuron_ram", [(0, 1024), (100, 924), (100, 200)]
 )
 def test_Online_GenParamConfig3(neuron_start_addr, n_neuron_ram):
-    info, contents = ParamGenOnline.GenNeuronRAM(neuron_start_addr, n_neuron_ram)
+    info, contents = ParamGenOnline.GenNeuronRAM(neuron_start_addr, n_neuron_ram, True)
     
     assert 0 == ((info >> 19) & 1)
     assert neuron_start_addr == info >> 20
@@ -118,14 +118,14 @@ def test_Online_GenParamConfig3(neuron_start_addr, n_neuron_ram):
     assert len(contents) == 2 * n_neuron_ram
     
     with pytest.raises(ValueError):
-        ParamGenOnline.GenParamConfig3(1000, 25)
+        ParamGenOnline.GenParamConfig3(1000, 25, True)
         
         
 @pytest.mark.parametrize(
     "neuron_start_addr, n_neuron_ram", [(0, 1024), (100, 924), (100, 200)]
 )
 def test_Online_GenParamConfig4(neuron_start_addr, n_neuron_ram):
-    info, contents = ParamGenOnline.GenWeightRAM(neuron_start_addr, n_neuron_ram)
+    info, contents = ParamGenOnline.GenWeightRAM(neuron_start_addr, n_neuron_ram, True)
     
     assert 0 == ((info >> 19) & 1)
     assert neuron_start_addr == info >> 20
@@ -133,4 +133,4 @@ def test_Online_GenParamConfig4(neuron_start_addr, n_neuron_ram):
     assert len(contents) == 16 * n_neuron_ram
     
     with pytest.raises(ValueError):
-        ParamGenOnline.GenParamConfig4(1000, 25)
+        ParamGenOnline.GenParamConfig4(1000, 25, True)
