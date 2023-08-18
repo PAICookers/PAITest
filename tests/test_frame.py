@@ -2,7 +2,7 @@ import pytest
 
 from paitest.coord import Coord
 from paitest.frames import FrameGenOffline, FrameGenOnline
-from paitest.frames import ParamGenOffline
+from paitest.frames.params import ParamGenOffline, ParamGenOnline
 from paitest._types import FrameSubType as FST, PackageType
 
 
@@ -21,8 +21,9 @@ def test_Offline_GenConfigFrame1(random_seed):
 
     assert config1.length == 3
     assert config1.sub_type == FST.CONFIG_TYPE1
-    assert config1.chip_address == 0
-    assert config1.core_address == 0b100001
+    assert config1.chip_coord == Coord(0, 0)
+    assert config1.core_coord == Coord(1, 1)
+    assert config1.replication_id == Coord(2, 2)
 
     payloads = config1.payload
     seed = (payloads[0] << 34) + (payloads[1] << 4) + payloads[2]
@@ -41,7 +42,7 @@ def test_Offline_GenConfigFrame2(test_chip_coord: Coord):
 
     assert config1.length == 3
     assert config1.sub_type == FST.CONFIG_TYPE2
-    assert config1.chip_address == 0
+    assert config1.chip_coord == Coord(0, 0)
     assert config1.core_coord == Coord(1, 1)
     assert config1.replication_id == Coord(3, 4)
 
@@ -177,7 +178,7 @@ def test_Offline_GenTestOutFrame1():
     assert testout1.core_coord == Coord(2, 1)
     assert testout1.replication_id == Coord(6, 7)
     assert testout1.payload == params
-    
+
     assert getattr(testout1, "test_chip_coord") == Coord(1, 0)
 
 
@@ -193,7 +194,7 @@ def test_Offline_GenTestOutFrame2():
     assert testout2.core_coord == Coord(2, 1)
     assert testout2.replication_id == Coord(6, 7)
     assert testout2.payload == params
-    
+
     assert getattr(testout2, "test_chip_coord") == Coord(2, 0)
 
 
@@ -216,7 +217,7 @@ def test_Offline_GenTestOutFrame3(sram_start_addr, n_neuron_ram):
     assert testout3.start_addr == sram_start_addr
     assert testout3.n_package == 4 * n_neuron_ram
     assert testout3.length == testout3.n_package + 1
-    
+
     assert getattr(testout3, "test_chip_coord") == Coord(1, 0)
 
     with pytest.raises(ValueError):
@@ -244,10 +245,89 @@ def test_Offline_GenTestOutFrame4(sram_start_addr, n_weight_ram):
     assert testout4.start_addr == sram_start_addr
     assert testout4.n_package == 18 * n_weight_ram
     assert testout4.length == testout4.n_package + 1
-    
+
     assert getattr(testout4, "test_chip_coord") == Coord(1, 0)
 
     with pytest.raises(ValueError):
         testout4 = FrameGenOffline.GenTestOutFrame4(
             Coord(1, 1), Coord(2, 2), Coord(10, 10), 0, 513, contents
+        )
+
+
+def test_Online_GenConfigFrame1():
+    params = ParamGenOnline.GenParamConfig1(True)
+    config1 = FrameGenOnline.GenConfigFrame1(
+        Coord(1, 1), Coord(1, 2), Coord(3, 3), params
+    )
+
+    assert config1.length == 16
+    assert config1.sub_type == FST.CONFIG_TYPE1
+    assert config1.payload == params
+    assert config1.chip_coord == Coord(1, 1)
+    assert config1.core_coord == Coord(1, 2)
+    assert config1.replication_id == Coord(3, 3)
+
+
+@pytest.mark.parametrize("test_chip_addr", [Coord(1, 1), Coord(2, 4), Coord(27, 27)])
+def test_Online_GenConfigFrame2(test_chip_addr: Coord):
+    params = ParamGenOnline.GenParamConfig2(test_chip_addr, True)
+    config2 = FrameGenOnline.GenConfigFrame2(
+        Coord(1, 1), Coord(1, 2), Coord(3, 3), params
+    )
+
+    assert config2.length == 8
+    assert config2.sub_type == FST.CONFIG_TYPE2
+    assert config2.payload == params
+    assert config2.chip_coord == Coord(1, 1)
+    assert config2.core_coord == Coord(1, 2)
+    assert config2.replication_id == Coord(3, 3)
+
+    assert config2.payload[7] == 0
+    assert (config2.payload[6] >> 28) & 1 == 0
+    assert (config2.payload[6] >> 16) & ((1 << 10) - 1) == test_chip_addr.address
+
+
+@pytest.mark.parametrize(
+    "neuron_start_addr, n_neuron_ram", [(0, 1024), (600, 400), (512, 512)]
+)
+def test_Online_GenConfigFrame3(neuron_start_addr, n_neuron_ram):
+    config3 = FrameGenOnline.GenConfigFrame3(
+        Coord(1, 1), Coord(1, 2), Coord(3, 3), neuron_start_addr, n_neuron_ram
+    )
+
+    assert config3.length == config3.n_package + 1
+    assert config3.sub_type == FST.CONFIG_TYPE3
+    assert config3.chip_coord == Coord(1, 1)
+    assert config3.core_coord == Coord(1, 2)
+    assert config3.replication_id == Coord(3, 3)
+    assert config3.start_addr == neuron_start_addr
+    assert config3.package_type == PackageType.CONFIG
+    assert config3.n_package == 2 * n_neuron_ram
+
+    with pytest.raises(ValueError):
+        config3 = FrameGenOnline.GenConfigFrame3(
+            Coord(1, 1), Coord(2, 2), Coord(10, 10), 0, 1025
+        )
+
+
+@pytest.mark.parametrize(
+    "neuron_start_addr, n_neuron_ram", [(0, 1024), (600, 400), (512, 512)]
+)
+def test_Online_GenConfigFrame4(neuron_start_addr, n_neuron_ram):
+    config4 = FrameGenOnline.GenConfigFrame4(
+        Coord(1, 1), Coord(1, 2), Coord(3, 3), neuron_start_addr, n_neuron_ram
+    )
+
+    assert config4.length == config4.n_package + 1
+    assert config4.sub_type == FST.CONFIG_TYPE4
+    assert config4.chip_coord == Coord(1, 1)
+    assert config4.core_coord == Coord(1, 2)
+    assert config4.replication_id == Coord(3, 3)
+    assert config4.start_addr == neuron_start_addr
+    assert config4.package_type == PackageType.CONFIG
+    assert config4.n_package == 16 * n_neuron_ram
+
+    with pytest.raises(ValueError):
+        config4 = FrameGenOnline.GenConfigFrame3(
+            Coord(1, 1), Coord(2, 2), Coord(10, 10), 0, 1025
         )
