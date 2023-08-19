@@ -729,7 +729,7 @@ class FrameGenOnline(FrameGen):
         replication_id: ReplicationId,
         neuron_start_addr: int,
         n_neuron_ram: int,
-    ) -> Frame:
+    ) -> FramePackage:
         if neuron_start_addr + n_neuron_ram > 1024:
             raise ValueError(
                 f"Neurons start address + number of neuron rams exceeds the limit 1024!({neuron_start_addr + n_neuron_ram})"
@@ -740,7 +740,7 @@ class FrameGenOnline(FrameGen):
             neuron_start_addr, PackageType.TEST_IN, n_package
         )
 
-        return Frame.GenFrame(
+        return FramePackage.GenFramePackage(
             FST.TEST_IN_TYPE3,
             chip_coord,
             core_coord,
@@ -756,7 +756,7 @@ class FrameGenOnline(FrameGen):
         neuron_start_addr: int,
         n_neuron_ram: int,
         contents: FrameArray,
-    ) -> Frame:
+    ) -> FramePackage:
         if neuron_start_addr + n_neuron_ram > 1024:
             raise ValueError(
                 f"Neurons start address + number of neuron rams exceeds the limit 1024!({neuron_start_addr + n_neuron_ram})"
@@ -783,7 +783,7 @@ class FrameGenOnline(FrameGen):
         replication_id: ReplicationId,
         neuron_start_addr: int,
         n_neuron_ram: int,
-    ) -> Frame:
+    ) -> FramePackage:
         if neuron_start_addr + n_neuron_ram > 1024:
             raise ValueError(
                 f"Neurons start address + number of neuron rams exceeds the limit 1024!({neuron_start_addr + n_neuron_ram})"
@@ -794,7 +794,7 @@ class FrameGenOnline(FrameGen):
             neuron_start_addr, PackageType.TEST_IN, n_package
         )
 
-        return Frame.GenFrame(
+        return FramePackage.GenFramePackage(
             FST.TEST_IN_TYPE4,
             chip_coord,
             core_coord,
@@ -810,7 +810,7 @@ class FrameGenOnline(FrameGen):
         neuron_start_addr: int,
         n_neuron_ram: int,
         contents: FrameArray,
-    ) -> Frame:
+    ) -> FramePackage:
         if neuron_start_addr + n_neuron_ram > 1024:
             raise ValueError(
                 f"Neurons start address + number of neuron rams exceeds the limit 1024!({neuron_start_addr + n_neuron_ram})"
@@ -818,7 +818,7 @@ class FrameGenOnline(FrameGen):
 
         n_package = 16 * n_neuron_ram
         info = ParamGenOnline.GenRAMInfo(
-            neuron_start_addr, PackageType.TEST_IN, n_package
+            neuron_start_addr, PackageType.TEST_OUT, n_package
         )
 
         return FramePackage.GenFramePackage(
