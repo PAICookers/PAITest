@@ -1,5 +1,5 @@
 from enum import Enum, unique
-from typing import Optional, Tuple, Union, overload
+from typing import Optional, overload, Tuple, Union
 
 
 @unique
@@ -101,7 +101,7 @@ class Coord:
 
         raise TypeError(f"Unsupported type: {type(__other)}")
 
-    """Operations below are used only when comparing with a Cooord."""
+    """Operations below are used only when comparing with a Coord."""
 
     def __eq__(self, __other: "Coord") -> bool:
         """
@@ -175,11 +175,29 @@ class Coord:
     def __ge__(self, __other: "Coord") -> bool:
         return self.__gt__(__other) or self.__eq__(__other)
 
+    # def __and__(self, __other: "Coord") -> "Coord":
+    #     if not isinstance(__other, Coord):
+    #         raise TypeError(f"Unsupported type: {type(__other)}")
+
+    #     return Coord(self.x & __other.x, self.y & __other.y)
+
+    # def __or__(self, __other: "Coord") -> "Coord":
+    #     if not isinstance(__other, Coord):
+    #         raise TypeError(f"Unsupported type: {type(__other)}")
+
+    #     return Coord(self.x | __other.x, self.y | __other.y)
+
+    def __xor__(self, __other: Union["Coord", "ReplicationId"]) -> "ReplicationId":
+        return ReplicationId(self.x ^ __other.x, self.y ^ __other.y)
+    
+    def __hash__(self) -> int:
+        return hash(self.address)
+
     def __str__(self) -> str:
         return f"Coord({self.x}, {self.y})"
 
     def __repr__(self) -> str:
-        return "{:05b}, {:05b}".format(self.x, self.y)
+        return "({:05b}, {:05b})".format(self.x, self.y)
 
     def to_tuple(self) -> Tuple[int, int]:
         """Convert to tuple"""
@@ -319,4 +337,19 @@ class CoordOffset:
         return self.delta_x != __other.delta_x or self.delta_y != __other.delta_y
 
 
-ReplicationId = Coord
+class ReplicationId(Coord):
+    
+    def __and__(self, __other: Union[Coord, "ReplicationId"]) -> "ReplicationId":
+        return ReplicationId(self.x & __other.x, self.y & __other.y)
+
+    def __or__(self, __other: Union[Coord, "ReplicationId"]) -> "ReplicationId":
+        return ReplicationId(self.x | __other.x, self.y | __other.y)
+
+    def __xor__(self, __other: Union[Coord, "ReplicationId"]) -> "ReplicationId":
+        return ReplicationId(self.x ^ __other.x, self.y ^ __other.y)
+
+    def __lshift__(self, __bit: int) -> int:
+        return self.address << __bit
+
+    def __rshift__(self, __bit: int) -> int:
+        return self.address >> __bit
