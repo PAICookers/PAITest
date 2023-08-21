@@ -1,6 +1,6 @@
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Set, Tuple, Union
 from paitest._types import CoordLike
-from paitest.coord import Coord, CoreType
+from paitest.coord import Coord, CoreType, ReplicationId
 
 
 def get_core_type(coord: CoordLike) -> CoreType:
@@ -95,3 +95,47 @@ def bin_combine_x(*components: int, pos: Union[int, List[int], Tuple[int, ...]])
         result = bin_combine(components[i], result, pos[i])
 
     return result
+
+
+def get_replication_id(dest_coords: List[Coord]) -> ReplicationId:
+    """
+    Arguments:
+        - dest_coords: the list of coordinates which are the destinations of a frame.
+    
+    Return:
+        The replication ID.
+    """
+    baseCore = dest_coords[0]
+    rid = ReplicationId(0, 0)
+    
+    for coord in dest_coords:
+        rid |= baseCore ^ coord
+    
+    return rid
+
+
+def get_multicast_cores(base_coord: Coord, repilication_id: ReplicationId) -> List[Coord]:
+    cores: List[Coord] = []
+    cores.append(base_coord)
+    
+    for i in range(10):
+        if (repilication_id >> i) & 1:
+            temp = []
+            for core in cores:
+                temp.append(core ^ ReplicationId.from_tuple(bin_split(1 << i, 5)))
+            
+            cores.extend(temp)
+    
+    return cores
+
+
+def to_coord(coordlike: CoordLike) -> Coord:
+    if isinstance(coordlike, (list, tuple)):
+        if len(coordlike) != 2:
+            raise ValueError(
+                f"Must be a tuple or list of 2 elements to represent a coordinate: {len(coordlike)}"
+            )
+
+        return Coord.from_tuple(coordlike)
+    
+    return coordlike
