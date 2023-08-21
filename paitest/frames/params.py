@@ -199,7 +199,7 @@ class ParamGenOffline(ParamGen):
 
         return info, tuple(contents)
 
-    """Methods alias"""
+    """Methods aliases"""
     GenRandomSeed = gen_param_config1
     GenParamReg = gen_param_config2
     GenNeuronRAM = gen_param_config3
@@ -343,7 +343,7 @@ class ParamGenOnline(ParamGen):
 
         return info, tuple(contents)
 
-    """Methods alias"""
+    """Methods aliases"""
     GenLUT = gen_param_config1
     GenCoreParam = gen_param_config2
     GenNeuronRAM = gen_param_config3

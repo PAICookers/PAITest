@@ -1,5 +1,5 @@
 from enum import Enum, unique
-from paitest.coord import CoordOffset
+from .coord import CoordOffset
 
 
 @unique

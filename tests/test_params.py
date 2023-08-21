@@ -1,5 +1,5 @@
 import pytest
-from paitest.frames import ParamGenOffline, ParamGenOnline
+from paitest.frames.params import ParamGenOffline, ParamGenOnline
 from paitest.coord import Coord
 from paitest.frames.mask import OfflineConfigFrameMask as OFF_CFM
 

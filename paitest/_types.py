@@ -45,5 +45,5 @@ class PackageType(Enum):
     TEST_OUT = 0
 
 
-CoordLike = TypeVar("CoordLike", Coord, Tuple[int, ...], List[int])
+CoordLike = TypeVar("CoordLike", Coord, Tuple[int, int])
 FrameArray = TypeVar("FrameArray", List[int], Tuple[int, ...])
