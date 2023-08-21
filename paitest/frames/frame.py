@@ -62,7 +62,7 @@ class Frame:
         self.payload = payload
 
     @classmethod
-    def GenFrame(
+    def get_frame(
         cls,
         subtype: FST,
         chip_coord: Coord,
@@ -166,7 +166,7 @@ class FrameGroup(Frame):
             setattr(self, "test_chip_coord", chip_coord)
 
     @classmethod
-    def GenFrameGroup(
+    def get_frame_group(
         cls,
         subtype: FST,
         chip_coord: Coord,
@@ -183,7 +183,7 @@ class FrameGroup(Frame):
         )
 
     def __getitem__(self, item) -> Frame:
-        return super().GenFrame(
+        return super().get_frame(
             self.sub_type,
             self.chip_coord,
             self.core_coord,
@@ -255,7 +255,7 @@ class FramePackage(Frame):
             setattr(self, "test_chip_coord", chip_coord)
 
     @classmethod
-    def GenFramePackage(
+    def get_frame_package(
         cls,
         subtype: FST,
         chip_coord: Coord,
@@ -329,74 +329,74 @@ class FramePackage(Frame):
 class FrameGen(ABC):
     @staticmethod
     @abstractmethod
-    def GenConfigFrame1() -> FrameGroup:
+    def gen_config_frame1() -> FrameGroup:
         raise NotImplementedError
 
     @staticmethod
     @abstractmethod
-    def GenConfigFrame2() -> FrameGroup:
+    def gen_config_frame2() -> FrameGroup:
         raise NotImplementedError
 
     @staticmethod
     @abstractmethod
-    def GenConfigFrame3() -> FramePackage:
+    def gen_config_frame3() -> FramePackage:
         raise NotImplementedError
 
     @staticmethod
     @abstractmethod
-    def GenConfigFrame4() -> FramePackage:
+    def gen_config_frame4() -> FramePackage:
         raise NotImplementedError
 
     @staticmethod
     @abstractmethod
-    def GenTestInFrame1() -> Frame:
+    def gen_testin_frame1() -> Frame:
         raise NotImplementedError
 
     @staticmethod
     @abstractmethod
-    def GenTestOutFrame1() -> FramePackage:
+    def gen_testout_frame1() -> FramePackage:
         raise NotImplementedError
 
     @staticmethod
     @abstractmethod
-    def GenTestInFrame2() -> Frame:
+    def gen_testin_frame2() -> Frame:
         return NotImplementedError
 
     @staticmethod
     @abstractmethod
-    def GenTestOutFrame2() -> FrameGroup:
+    def gen_testout_frame2() -> FrameGroup:
         raise NotImplementedError
 
     @staticmethod
     @abstractmethod
-    def GenTestInFrame3() -> Frame:
+    def gen_testin_frame3() -> Frame:
         raise NotImplementedError
 
     @staticmethod
     @abstractmethod
-    def GenTestOutFrame3() -> FramePackage:
+    def gen_testout_frame3() -> FramePackage:
         raise NotImplementedError
 
     @staticmethod
     @abstractmethod
-    def GenTestInFrame4() -> Frame:
+    def gen_testin_frame4() -> Frame:
         raise NotImplementedError
 
     @staticmethod
     @abstractmethod
-    def GenTestOutFrame4() -> FramePackage:
+    def gen_testout_frame4() -> FramePackage:
         raise NotImplementedError
 
 
 class FrameGenOffline(FrameGen):
     @staticmethod
-    def GenConfigFrame1(
+    def gen_config_frame1(
         chip_coord: Coord,
         core_coord: Coord,
         replication_id: ReplicationId,
         random_seed: FrameArray,
     ) -> FrameGroup:
-        return FrameGroup.GenFrameGroup(
+        return FrameGroup.get_frame_group(
             FST.CONFIG_TYPE1,
             chip_coord,
             core_coord,
@@ -405,13 +405,13 @@ class FrameGenOffline(FrameGen):
         )
 
     @staticmethod
-    def GenConfigFrame2(
+    def gen_config_frame2(
         chip_coord: Coord,
         core_coord: Coord,
         replication_id: ReplicationId,
         param_reg: FrameArray,
     ) -> FrameGroup:
-        return FrameGroup.GenFrameGroup(
+        return FrameGroup.get_frame_group(
             FST.CONFIG_TYPE2,
             chip_coord,
             core_coord,
@@ -420,7 +420,7 @@ class FrameGenOffline(FrameGen):
         )
 
     @staticmethod
-    def GenConfigFrame3(
+    def gen_config_frame3(
         chip_coord: Coord,
         core_coord: Coord,
         replication_id: ReplicationId,
@@ -428,11 +428,11 @@ class FrameGenOffline(FrameGen):
         n_neuron_ram: int = 512,
         is_random: bool = True,
     ) -> FramePackage:
-        info, contents = ParamGenOffline.GenParamConfig3(
+        info, contents = ParamGenOffline.GenNeuronRAM(
             sram_start_addr, n_neuron_ram, is_random
         )
 
-        return FramePackage.GenFramePackage(
+        return FramePackage.get_frame_package(
             FST.CONFIG_TYPE3,
             chip_coord,
             core_coord,
@@ -442,7 +442,7 @@ class FrameGenOffline(FrameGen):
         )
 
     @staticmethod
-    def GenConfigFrame4(
+    def gen_config_frame4(
         chip_coord: Coord,
         core_coord: Coord,
         replication_id: ReplicationId,
@@ -450,11 +450,11 @@ class FrameGenOffline(FrameGen):
         n_weight_ram: int = 512,
         is_random: bool = True,
     ) -> FramePackage:
-        info, contents = ParamGenOffline.GenParamConfig4(
+        info, contents = ParamGenOffline.GenWeightRAM(
             sram_start_addr, n_weight_ram, is_random
         )
 
-        return FramePackage.GenFramePackage(
+        return FramePackage.get_frame_package(
             FST.CONFIG_TYPE4,
             chip_coord,
             core_coord,
@@ -464,11 +464,11 @@ class FrameGenOffline(FrameGen):
         )
 
     @staticmethod
-    def GenTestInFrame1(
+    def gen_testin_frame1(
         chip_coord: Coord, core_coord: Coord, replication_id: ReplicationId
     ) -> Frame:
         """Test input frame type I"""
-        return Frame.GenFrame(
+        return Frame.get_frame(
             FST.TEST_IN_TYPE1,
             chip_coord,
             core_coord,
@@ -476,13 +476,13 @@ class FrameGenOffline(FrameGen):
         )
 
     @staticmethod
-    def GenTestOutFrame1(
+    def gen_testout_frame1(
         test_chip_coord: Coord,
         core_coord: Coord,
         replication_id: ReplicationId,
         random_seed: FrameArray,
     ) -> FrameGroup:
-        return FrameGroup.GenFrameGroup(
+        return FrameGroup.get_frame_group(
             FST.TEST_OUT_TYPE1,
             test_chip_coord,
             core_coord,
@@ -491,10 +491,10 @@ class FrameGenOffline(FrameGen):
         )
 
     @staticmethod
-    def GenTestInFrame2(
+    def gen_testin_frame2(
         chip_coord: Coord, core_coord: Coord, replication_id: ReplicationId
     ) -> Frame:
-        return Frame.GenFrame(
+        return Frame.get_frame(
             FST.TEST_IN_TYPE2,
             chip_coord,
             core_coord,
@@ -502,13 +502,13 @@ class FrameGenOffline(FrameGen):
         )
 
     @staticmethod
-    def GenTestOutFrame2(
+    def gen_testout_frame2(
         test_chip_coord: Coord,
         core_coord: Coord,
         replication_id: ReplicationId,
         param_reg: FrameArray,
     ) -> FrameGroup:
-        return FrameGroup.GenFrameGroup(
+        return FrameGroup.get_frame_group(
             FST.TEST_OUT_TYPE2,
             test_chip_coord,
             core_coord,
@@ -517,7 +517,7 @@ class FrameGenOffline(FrameGen):
         )
 
     @staticmethod
-    def GenTestInFrame3(
+    def gen_testin_frame3(
         chip_coord: Coord,
         core_coord: Coord,
         replication_id: ReplicationId,
@@ -529,11 +529,11 @@ class FrameGenOffline(FrameGen):
                 f"SRAM start address + number of neurons exceeds the limit 512!({sram_start_addr + n_neuron_ram})"
             )
 
-        info = ParamGenOffline.GenRAMInfo(
+        info = ParamGenOffline.gen_ram_info(
             sram_start_addr, PackageType.TEST_IN, 4 * n_neuron_ram
         )
 
-        return FramePackage.GenFramePackage(
+        return FramePackage.get_frame_package(
             FST.TEST_IN_TYPE3,
             chip_coord,
             core_coord,
@@ -542,7 +542,7 @@ class FrameGenOffline(FrameGen):
         )
 
     @staticmethod
-    def GenTestOutFrame3(
+    def gen_testout_frame3(
         test_chip_coord: Coord,
         core_coord: Coord,
         replication_id: ReplicationId,
@@ -555,11 +555,11 @@ class FrameGenOffline(FrameGen):
                 f"SRAM start address + number of neurons exceeds the limit 512!({sram_start_addr + n_neuron_ram})"
             )
 
-        info = ParamGenOffline.GenRAMInfo(
+        info = ParamGenOffline.gen_ram_info(
             sram_start_addr, PackageType.TEST_OUT, 4 * n_neuron_ram
         )
 
-        return FramePackage.GenFramePackage(
+        return FramePackage.get_frame_package(
             FST.TEST_OUT_TYPE3,
             test_chip_coord,
             core_coord,
@@ -569,7 +569,7 @@ class FrameGenOffline(FrameGen):
         )
 
     @staticmethod
-    def GenTestInFrame4(
+    def gen_testin_frame4(
         chip_coord: Coord,
         core_coord: Coord,
         replication_id: ReplicationId,
@@ -581,11 +581,11 @@ class FrameGenOffline(FrameGen):
                 f"SRAM start address + number of weight rams exceeds the limit 512!({sram_start_addr + n_weight_ram})"
             )
 
-        info = ParamGenOffline.GenRAMInfo(
+        info = ParamGenOffline.gen_ram_info(
             sram_start_addr, PackageType.TEST_IN, 18 * n_weight_ram
         )
 
-        return FramePackage.GenFramePackage(
+        return FramePackage.get_frame_package(
             FST.TEST_IN_TYPE4,
             chip_coord,
             core_coord,
@@ -594,7 +594,7 @@ class FrameGenOffline(FrameGen):
         )
 
     @staticmethod
-    def GenTestOutFrame4(
+    def gen_testout_frame4(
         test_chip_coord: Coord,
         core_coord: Coord,
         replication_id: ReplicationId,
@@ -607,11 +607,11 @@ class FrameGenOffline(FrameGen):
                 f"SRAM start address + number of weight rams exceeds the limit 512!({sram_start_addr + n_weight_ram})"
             )
 
-        info = ParamGenOffline.GenRAMInfo(
+        info = ParamGenOffline.gen_ram_info(
             sram_start_addr, PackageType.TEST_OUT, 18 * n_weight_ram
         )
 
-        return FramePackage.GenFramePackage(
+        return FramePackage.get_frame_package(
             FST.TEST_OUT_TYPE4,
             test_chip_coord,
             core_coord,
@@ -623,29 +623,29 @@ class FrameGenOffline(FrameGen):
 
 class FrameGenOnline(FrameGen):
     @staticmethod
-    def GenConfigFrame1(
+    def gen_config_frame1(
         chip_coord: Coord,
         core_coord: Coord,
         replication_id: ReplicationId,
         lut: FrameArray,
     ) -> FrameGroup:
-        return FrameGroup.GenFrameGroup(
+        return FrameGroup.get_frame_group(
             FST.CONFIG_TYPE1, chip_coord, core_coord, replication_id, lut
         )
 
     @staticmethod
-    def GenConfigFrame2(
+    def gen_config_frame2(
         chip_coord: Coord,
         core_coord: Coord,
         replication_id: ReplicationId,
         core_reg: FrameArray,
     ) -> FrameGroup:
-        return FrameGroup.GenFrameGroup(
+        return FrameGroup.get_frame_group(
             FST.CONFIG_TYPE2, chip_coord, core_coord, replication_id, core_reg
         )
 
     @staticmethod
-    def GenConfigFrame3(
+    def gen_config_frame3(
         chip_coord: Coord,
         core_coord: Coord,
         replication_id: ReplicationId,
@@ -653,16 +653,16 @@ class FrameGenOnline(FrameGen):
         n_neuron_ram: int = 1024,
         is_random: bool = True,
     ) -> FramePackage:
-        info, contents = ParamGenOnline.GenParamConfig3(
+        info, contents = ParamGenOnline.GenNeuronRAM(
             neuron_start_addr, n_neuron_ram, is_random
         )
 
-        return FramePackage.GenFramePackage(
+        return FramePackage.get_frame_package(
             FST.CONFIG_TYPE3, chip_coord, core_coord, replication_id, info, contents
         )
 
     @staticmethod
-    def GenConfigFrame4(
+    def gen_config_frame4(
         chip_coord: Coord,
         core_coord: Coord,
         replication_id: ReplicationId,
@@ -670,19 +670,19 @@ class FrameGenOnline(FrameGen):
         n_neuron_ram: int = 1024,
         is_random: bool = True,
     ) -> FramePackage:
-        info, contents = ParamGenOnline.GenParamConfig4(
+        info, contents = ParamGenOnline.GenWeightRAM(
             neuron_start_addr, n_neuron_ram, is_random
         )
 
-        return FramePackage.GenFramePackage(
+        return FramePackage.get_frame_package(
             FST.CONFIG_TYPE4, chip_coord, core_coord, replication_id, info, contents
         )
 
     @staticmethod
-    def GenTestInFrame1(
+    def gen_testin_frame1(
         chip_coord: Coord, core_coord: Coord, replication_id: ReplicationId
     ) -> Frame:
-        return Frame.GenFrame(
+        return Frame.get_frame(
             FST.TEST_IN_TYPE1,
             chip_coord,
             core_coord,
@@ -690,21 +690,21 @@ class FrameGenOnline(FrameGen):
         )
 
     @staticmethod
-    def GenTestOutFrame1(
+    def gen_testout_frame1(
         test_chip_coord: Coord,
         core_coord: Coord,
         replication_id: ReplicationId,
         lut: FrameArray,
     ) -> FrameGroup:
-        return FrameGroup.GenFrameGroup(
+        return FrameGroup.get_frame_group(
             FST.TEST_OUT_TYPE1, test_chip_coord, core_coord, replication_id, lut
         )
 
     @staticmethod
-    def GenTestInFrame2(
+    def gen_testin_frame2(
         chip_coord: Coord, core_coord: Coord, replication_id: ReplicationId
     ) -> Frame:
-        return Frame.GenFrame(
+        return Frame.get_frame(
             FST.TEST_IN_TYPE2,
             chip_coord,
             core_coord,
@@ -712,18 +712,18 @@ class FrameGenOnline(FrameGen):
         )
 
     @staticmethod
-    def GenTestOutFrame2(
+    def gen_testout_frame2(
         test_chip_coord: Coord,
         core_coord: Coord,
         replication_id: ReplicationId,
         core_reg: FrameArray,
     ) -> Frame:
-        return FrameGroup.GenFrameGroup(
+        return FrameGroup.get_frame_group(
             FST.TEST_OUT_TYPE2, test_chip_coord, core_coord, replication_id, core_reg
         )
 
     @staticmethod
-    def GenTestInFrame3(
+    def gen_testin_frame3(
         chip_coord: Coord,
         core_coord: Coord,
         replication_id: ReplicationId,
@@ -736,11 +736,11 @@ class FrameGenOnline(FrameGen):
             )
 
         n_package = 2 * n_neuron_ram
-        info = ParamGenOnline.GenRAMInfo(
+        info = ParamGenOnline.gen_ram_info(
             neuron_start_addr, PackageType.TEST_IN, n_package
         )
 
-        return FramePackage.GenFramePackage(
+        return FramePackage.get_frame_package(
             FST.TEST_IN_TYPE3,
             chip_coord,
             core_coord,
@@ -749,7 +749,7 @@ class FrameGenOnline(FrameGen):
         )
 
     @staticmethod
-    def GenTestOutFrame3(
+    def gen_testout_frame3(
         test_chip_coord: Coord,
         core_coord: Coord,
         replication_id: ReplicationId,
@@ -763,11 +763,11 @@ class FrameGenOnline(FrameGen):
             )
 
         n_package = 2 * n_neuron_ram
-        info = ParamGenOnline.GenRAMInfo(
+        info = ParamGenOnline.gen_ram_info(
             neuron_start_addr, PackageType.TEST_OUT, n_package
         )
 
-        return FramePackage.GenFramePackage(
+        return FramePackage.get_frame_package(
             FST.TEST_OUT_TYPE3,
             test_chip_coord,
             core_coord,
@@ -777,7 +777,7 @@ class FrameGenOnline(FrameGen):
         )
 
     @staticmethod
-    def GenTestInFrame4(
+    def gen_testin_frame4(
         chip_coord: Coord,
         core_coord: Coord,
         replication_id: ReplicationId,
@@ -790,11 +790,11 @@ class FrameGenOnline(FrameGen):
             )
 
         n_package = 16 * n_neuron_ram
-        info = ParamGenOnline.GenRAMInfo(
+        info = ParamGenOnline.gen_ram_info(
             neuron_start_addr, PackageType.TEST_IN, n_package
         )
 
-        return FramePackage.GenFramePackage(
+        return FramePackage.get_frame_package(
             FST.TEST_IN_TYPE4,
             chip_coord,
             core_coord,
@@ -803,7 +803,7 @@ class FrameGenOnline(FrameGen):
         )
 
     @staticmethod
-    def GenTestOutFrame4(
+    def gen_testout_frame4(
         test_chip_coord: Coord,
         core_coord: Coord,
         replication_id: ReplicationId,
@@ -817,11 +817,11 @@ class FrameGenOnline(FrameGen):
             )
 
         n_package = 16 * n_neuron_ram
-        info = ParamGenOnline.GenRAMInfo(
+        info = ParamGenOnline.gen_ram_info(
             neuron_start_addr, PackageType.TEST_OUT, n_package
         )
 
-        return FramePackage.GenFramePackage(
+        return FramePackage.get_frame_package(
             FST.TEST_OUT_TYPE4,
             test_chip_coord,
             core_coord,

@@ -23,26 +23,26 @@ def test_chip_addr_combine(high3: int, low7: int) -> Coord:
 class ParamGen(ABC):
     @staticmethod
     @abstractmethod
-    def GenParamConfig1() -> ...:
+    def gen_param_config1() -> ...:
         raise NotImplementedError
 
     @staticmethod
     @abstractmethod
-    def GenParamConfig2() -> ...:
+    def gen_param_config2() -> ...:
         raise NotImplementedError
 
     @staticmethod
     @abstractmethod
-    def GenParamConfig3() -> ...:
+    def gen_param_config3() -> ...:
         raise NotImplementedError
 
     @staticmethod
     @abstractmethod
-    def GenParamConfig4() -> ...:
+    def gen_param_config4() -> ...:
         raise NotImplementedError
 
     @staticmethod
-    def GenRAMInfo(start_addr: int, _type: PackageType, n_package: int) -> int:
+    def gen_ram_info(start_addr: int, _type: PackageType, n_package: int) -> int:
         """Generate a certain package information of a `FramePackage`,
         for offline & online both.
         """
@@ -61,7 +61,7 @@ class ParamGenOffline(ParamGen):
     """Parameter generation methods for offline cores"""
 
     @staticmethod
-    def GenParamConfig1(is_random: bool, seed: Optional[int] = None) -> Tuple[int, ...]:
+    def gen_param_config1(is_random: bool, seed: Optional[int] = None) -> Tuple[int, ...]:
         """Generate random seed for configuration frame & test output frame type I.
 
         Random seed = [30bit] + [30bit] + [26'b0 + 4bit]
@@ -86,7 +86,7 @@ class ParamGenOffline(ParamGen):
         )
 
     @staticmethod
-    def GenParamConfig2(
+    def gen_param_config2(
         test_chip_coord: Coord,
         is_random: bool,
         *,
@@ -119,7 +119,7 @@ class ParamGenOffline(ParamGen):
         return tuple(params)
 
     @staticmethod
-    def GenParamConfig3(
+    def gen_param_config3(
         sram_start_addr: int, n_neuron_ram: int, is_random: bool
     ) -> Tuple[int, Tuple[int, ...]]:
         """Generate neuron RAM for configuration frame type III.
@@ -146,7 +146,7 @@ class ParamGenOffline(ParamGen):
             )
 
         n_package = 4 * n_neuron_ram
-        info = ParamGen.GenRAMInfo(sram_start_addr, PackageType.CONFIG, n_package)
+        info = ParamGen.gen_ram_info(sram_start_addr, PackageType.CONFIG, n_package)
 
         contents = []
         if is_random:
@@ -161,7 +161,7 @@ class ParamGenOffline(ParamGen):
         return info, tuple(contents)
 
     @staticmethod
-    def GenParamConfig4(
+    def gen_param_config4(
         sram_start_addr: int, n_weight_ram: int, is_random: bool
     ) -> Tuple[int, Tuple[int, ...]]:
         """Generate weight RAM for configuration frame type IV.
@@ -188,7 +188,7 @@ class ParamGenOffline(ParamGen):
             )
 
         n_package = 18 * n_weight_ram
-        info = ParamGen.GenRAMInfo(sram_start_addr, PackageType.CONFIG, n_package)
+        info = ParamGen.gen_ram_info(sram_start_addr, PackageType.CONFIG, n_package)
 
         contents = []
         if is_random:
@@ -200,17 +200,17 @@ class ParamGenOffline(ParamGen):
         return info, tuple(contents)
 
     """Methods alias"""
-    GenRandomSeed = GenParamConfig1
-    GenParamReg = GenParamConfig2
-    GenNeuronRAM = GenParamConfig3
-    GenWeightRAM = GenParamConfig4
+    GenRandomSeed = gen_param_config1
+    GenParamReg = gen_param_config2
+    GenNeuronRAM = gen_param_config3
+    GenWeightRAM = gen_param_config4
 
 
 class ParamGenOnline(ParamGen):
     """Parameter generation methods for online cores"""
 
     @staticmethod
-    def GenParamConfig1(is_random: bool, *LUT: int) -> Tuple[int, ...]:
+    def gen_param_config1(is_random: bool, *LUT: int) -> Tuple[int, ...]:
         """Generate LUT for configuration frame type I"""
         params = []
 
@@ -223,7 +223,7 @@ class ParamGenOnline(ParamGen):
         return tuple(params)
 
     @staticmethod
-    def GenParamConfig2(
+    def gen_param_config2(
         test_chip_coord: Coord,
         is_random: bool,
         *,
@@ -270,7 +270,7 @@ class ParamGenOnline(ParamGen):
         return tuple(params)
 
     @staticmethod
-    def GenParamConfig3(
+    def gen_param_config3(
         neuron_start_addr: int, n_neuron_ram: int, is_random: bool
     ) -> Tuple[int, Tuple[int, ...]]:
         """Generate neuron RAM for configuration frame type III.
@@ -293,7 +293,7 @@ class ParamGenOnline(ParamGen):
             )
 
         n_package = 2 * n_neuron_ram
-        info = ParamGen.GenRAMInfo(neuron_start_addr, PackageType.CONFIG, n_package)
+        info = ParamGen.gen_ram_info(neuron_start_addr, PackageType.CONFIG, n_package)
 
         contents = []
         if is_random:
@@ -306,7 +306,7 @@ class ParamGenOnline(ParamGen):
         return info, tuple(contents)
 
     @staticmethod
-    def GenParamConfig4(
+    def gen_param_config4(
         neuron_start_addr: int, n_neuron_ram: int, is_random: bool
     ) -> Tuple[int, Tuple[int, ...]]:
         """Generate weight RAM for configuration frame type IV.
@@ -330,7 +330,7 @@ class ParamGenOnline(ParamGen):
 
         n_package = 16 * n_neuron_ram
         n_ram_per_neuron = 8
-        info = ParamGen.GenRAMInfo(neuron_start_addr, PackageType.CONFIG, n_package)
+        info = ParamGen.gen_ram_info(neuron_start_addr, PackageType.CONFIG, n_package)
 
         contents = []
         if is_random:
@@ -344,7 +344,7 @@ class ParamGenOnline(ParamGen):
         return info, tuple(contents)
 
     """Methods alias"""
-    GenLUT = GenParamConfig1
-    GenCoreParam = GenParamConfig2
-    GenNeuronRAM = GenParamConfig3
-    GenWeightRAM = GenParamConfig4
+    GenLUT = gen_param_config1
+    GenCoreParam = gen_param_config2
+    GenNeuronRAM = gen_param_config3
+    GenWeightRAM = gen_param_config4

@@ -14,8 +14,8 @@ from paitest._types import FrameSubType as FST, PackageType
     ],
 )
 def test_Offline_GenConfigFrame1(random_seed):
-    params = ParamGenOffline.GenParamConfig1(False, random_seed)
-    config1 = FrameGenOffline.GenConfigFrame1(
+    params = ParamGenOffline.GenRandomSeed(False, random_seed)
+    config1 = FrameGenOffline.gen_config_frame1(
         Coord(0, 0), Coord(1, 1), Coord(2, 2), params
     )
 
@@ -35,8 +35,8 @@ def test_Offline_GenConfigFrame1(random_seed):
     "test_chip_coord", [Coord(1, 1), Coord(20, 10), Coord(0, 1), Coord(1, 0)]
 )
 def test_Offline_GenConfigFrame2(test_chip_coord: Coord):
-    params = ParamGenOffline.GenParamConfig2(test_chip_coord, True)
-    config2 = FrameGenOffline.GenConfigFrame2(
+    params = ParamGenOffline.GenParamReg(test_chip_coord, True)
+    config2 = FrameGenOffline.gen_config_frame2(
         Coord(0, 0), Coord(1, 1), Coord(3, 4), params
     )
 
@@ -56,7 +56,7 @@ def test_Offline_GenConfigFrame2(test_chip_coord: Coord):
     "sram_start_addr, n_neuron_ram", [(0, 512), (100, 200), (511, 1)]
 )
 def test_Offline_GenConfigFrame3(sram_start_addr, n_neuron_ram):
-    config3 = FrameGenOffline.GenConfigFrame3(
+    config3 = FrameGenOffline.gen_config_frame3(
         Coord(1, 1), Coord(2, 2), Coord(10, 10), sram_start_addr, n_neuron_ram
     )
 
@@ -70,7 +70,7 @@ def test_Offline_GenConfigFrame3(sram_start_addr, n_neuron_ram):
     assert config3.n_package == 4 * n_neuron_ram
 
     with pytest.raises(ValueError):
-        config3 = FrameGenOffline.GenConfigFrame3(
+        config3 = FrameGenOffline.gen_config_frame3(
             Coord(1, 1), Coord(2, 2), Coord(10, 10), 0, 513
         )
 
@@ -79,7 +79,7 @@ def test_Offline_GenConfigFrame3(sram_start_addr, n_neuron_ram):
     "sram_start_addr, n_weight_ram", [(0, 512), (100, 200), (511, 1)]
 )
 def test_Offline_GenConfigFrame4(sram_start_addr, n_weight_ram):
-    config4 = FrameGenOffline.GenConfigFrame4(
+    config4 = FrameGenOffline.gen_config_frame4(
         Coord(1, 1), Coord(2, 2), Coord(10, 10), sram_start_addr, n_weight_ram
     )
 
@@ -93,13 +93,13 @@ def test_Offline_GenConfigFrame4(sram_start_addr, n_weight_ram):
     assert config4.n_package == 18 * n_weight_ram
 
     with pytest.raises(ValueError):
-        config4 = FrameGenOffline.GenConfigFrame4(
+        config4 = FrameGenOffline.gen_config_frame4(
             Coord(1, 1), Coord(2, 2), Coord(10, 10), 0, 513
         )
 
 
 def test_Offline_GenTestInFrame1():
-    testin1 = FrameGenOffline.GenTestInFrame1(Coord(0, 0), Coord(2, 1), Coord(3, 3))
+    testin1 = FrameGenOffline.gen_testin_frame1(Coord(0, 0), Coord(2, 1), Coord(3, 3))
 
     assert testin1.length == 1
     assert testin1.sub_type == FST.TEST_IN_TYPE1
@@ -110,7 +110,7 @@ def test_Offline_GenTestInFrame1():
 
 
 def test_Offline_GenTestInFrame2():
-    testin2 = FrameGenOffline.GenTestInFrame2(Coord(0, 0), Coord(2, 1), Coord(3, 3))
+    testin2 = FrameGenOffline.gen_testin_frame2(Coord(0, 0), Coord(2, 1), Coord(3, 3))
 
     assert testin2.length == 1
     assert testin2.sub_type == FST.TEST_IN_TYPE2
@@ -124,7 +124,7 @@ def test_Offline_GenTestInFrame2():
     "sram_start_addr, n_neuron_ram", [(0, 512), (100, 200), (511, 1)]
 )
 def test_Offline_GenTestInFrame3(sram_start_addr, n_neuron_ram):
-    testin3 = FrameGenOffline.GenTestInFrame3(
+    testin3 = FrameGenOffline.gen_testin_frame3(
         Coord(0, 0), Coord(2, 1), Coord(3, 3), sram_start_addr, n_neuron_ram
     )
 
@@ -138,7 +138,7 @@ def test_Offline_GenTestInFrame3(sram_start_addr, n_neuron_ram):
     assert testin3.n_package == 4 * n_neuron_ram
 
     with pytest.raises(ValueError):
-        testin3 = FrameGenOffline.GenTestInFrame3(
+        testin3 = FrameGenOffline.gen_testin_frame3(
             Coord(1, 1), Coord(2, 2), Coord(10, 10), 0, 513
         )
 
@@ -147,7 +147,7 @@ def test_Offline_GenTestInFrame3(sram_start_addr, n_neuron_ram):
     "sram_start_addr, n_weight_ram", [(0, 512), (100, 200), (511, 1)]
 )
 def test_Offline_GenTestInFrame4(sram_start_addr, n_weight_ram):
-    testin4 = FrameGenOffline.GenTestInFrame4(
+    testin4 = FrameGenOffline.gen_testin_frame4(
         Coord(0, 0), Coord(2, 1), Coord(3, 3), sram_start_addr, n_weight_ram
     )
 
@@ -161,14 +161,14 @@ def test_Offline_GenTestInFrame4(sram_start_addr, n_weight_ram):
     assert testin4.n_package == 18 * n_weight_ram
 
     with pytest.raises(ValueError):
-        testin4 = FrameGenOffline.GenTestInFrame4(
+        testin4 = FrameGenOffline.gen_testin_frame4(
             Coord(1, 1), Coord(2, 2), Coord(10, 10), 0, 513
         )
 
 
 def test_Offline_GenTestOutFrame1():
-    params = ParamGenOffline.GenParamConfig1(True)
-    testout1 = FrameGenOffline.GenTestOutFrame1(
+    params = ParamGenOffline.GenRandomSeed(True)
+    testout1 = FrameGenOffline.gen_testout_frame1(
         Coord(1, 0), Coord(2, 1), Coord(6, 7), params
     )
 
@@ -183,8 +183,8 @@ def test_Offline_GenTestOutFrame1():
 
 
 def test_Offline_GenTestOutFrame2():
-    params = ParamGenOffline.GenParamConfig2(Coord(2, 0), True)
-    testout2 = FrameGenOffline.GenTestOutFrame2(
+    params = ParamGenOffline.GenParamReg(Coord(2, 0), True)
+    testout2 = FrameGenOffline.gen_testout_frame2(
         Coord(2, 0), Coord(2, 1), Coord(6, 7), params
     )
 
@@ -202,10 +202,8 @@ def test_Offline_GenTestOutFrame2():
     "sram_start_addr, n_neuron_ram", [(0, 512), (100, 200), (511, 1)]
 )
 def test_Offline_GenTestOutFrame3(sram_start_addr, n_neuron_ram):
-    info, contents = ParamGenOffline.GenParamConfig3(
-        sram_start_addr, n_neuron_ram, True
-    )
-    testout3 = FrameGenOffline.GenTestOutFrame3(
+    info, contents = ParamGenOffline.GenNeuronRAM(sram_start_addr, n_neuron_ram, True)
+    testout3 = FrameGenOffline.gen_testout_frame3(
         Coord(1, 0), Coord(2, 1), Coord(6, 7), sram_start_addr, n_neuron_ram, contents
     )
 
@@ -221,7 +219,7 @@ def test_Offline_GenTestOutFrame3(sram_start_addr, n_neuron_ram):
     assert getattr(testout3, "test_chip_coord") == Coord(1, 0)
 
     with pytest.raises(ValueError):
-        testout3 = FrameGenOffline.GenTestOutFrame3(
+        testout3 = FrameGenOffline.gen_testout_frame3(
             Coord(1, 1), Coord(2, 2), Coord(10, 10), 0, 513, contents
         )
 
@@ -230,10 +228,8 @@ def test_Offline_GenTestOutFrame3(sram_start_addr, n_neuron_ram):
     "sram_start_addr, n_weight_ram", [(0, 512), (100, 200), (511, 1)]
 )
 def test_Offline_GenTestOutFrame4(sram_start_addr, n_weight_ram):
-    info, contents = ParamGenOffline.GenParamConfig4(
-        sram_start_addr, n_weight_ram, True
-    )
-    testout4 = FrameGenOffline.GenTestOutFrame4(
+    info, contents = ParamGenOffline.GenWeightRAM(sram_start_addr, n_weight_ram, True)
+    testout4 = FrameGenOffline.gen_testout_frame4(
         Coord(1, 0), Coord(2, 1), Coord(6, 7), sram_start_addr, n_weight_ram, contents
     )
 
@@ -249,14 +245,14 @@ def test_Offline_GenTestOutFrame4(sram_start_addr, n_weight_ram):
     assert getattr(testout4, "test_chip_coord") == Coord(1, 0)
 
     with pytest.raises(ValueError):
-        testout4 = FrameGenOffline.GenTestOutFrame4(
+        testout4 = FrameGenOffline.gen_testout_frame4(
             Coord(1, 1), Coord(2, 2), Coord(10, 10), 0, 513, contents
         )
 
 
 def test_Online_GenConfigFrame1():
-    params = ParamGenOnline.GenParamConfig1(True)
-    config1 = FrameGenOnline.GenConfigFrame1(
+    params = ParamGenOnline.GenLUT(True)
+    config1 = FrameGenOnline.gen_config_frame1(
         Coord(1, 1), Coord(1, 2), Coord(3, 3), params
     )
 
@@ -270,8 +266,8 @@ def test_Online_GenConfigFrame1():
 
 @pytest.mark.parametrize("test_chip_addr", [Coord(1, 1), Coord(2, 4), Coord(27, 27)])
 def test_Online_GenConfigFrame2(test_chip_addr: Coord):
-    params = ParamGenOnline.GenParamConfig2(test_chip_addr, True)
-    config2 = FrameGenOnline.GenConfigFrame2(
+    params = ParamGenOnline.GenCoreParam(test_chip_addr, True)
+    config2 = FrameGenOnline.gen_config_frame2(
         Coord(1, 1), Coord(1, 2), Coord(3, 3), params
     )
 
@@ -291,7 +287,7 @@ def test_Online_GenConfigFrame2(test_chip_addr: Coord):
     "neuron_start_addr, n_neuron_ram", [(0, 1024), (600, 400), (512, 512)]
 )
 def test_Online_GenConfigFrame3(neuron_start_addr, n_neuron_ram):
-    config3 = FrameGenOnline.GenConfigFrame3(
+    config3 = FrameGenOnline.gen_config_frame3(
         Coord(1, 1), Coord(1, 2), Coord(3, 3), neuron_start_addr, n_neuron_ram
     )
 
@@ -305,7 +301,7 @@ def test_Online_GenConfigFrame3(neuron_start_addr, n_neuron_ram):
     assert config3.n_package == 2 * n_neuron_ram
 
     with pytest.raises(ValueError):
-        config3 = FrameGenOnline.GenConfigFrame3(
+        config3 = FrameGenOnline.gen_config_frame3(
             Coord(1, 1), Coord(2, 2), Coord(10, 10), 0, 1025
         )
 
@@ -314,7 +310,7 @@ def test_Online_GenConfigFrame3(neuron_start_addr, n_neuron_ram):
     "neuron_start_addr, n_neuron_ram", [(0, 1024), (600, 400), (512, 512)]
 )
 def test_Online_GenConfigFrame4(neuron_start_addr, n_neuron_ram):
-    config4 = FrameGenOnline.GenConfigFrame4(
+    config4 = FrameGenOnline.gen_config_frame4(
         Coord(1, 1), Coord(1, 2), Coord(3, 3), neuron_start_addr, n_neuron_ram
     )
 
@@ -328,13 +324,13 @@ def test_Online_GenConfigFrame4(neuron_start_addr, n_neuron_ram):
     assert config4.n_package == 16 * n_neuron_ram
 
     with pytest.raises(ValueError):
-        config4 = FrameGenOnline.GenConfigFrame3(
+        config4 = FrameGenOnline.gen_config_frame3(
             Coord(1, 1), Coord(2, 2), Coord(10, 10), 0, 1025
         )
 
 
 def test_Online_GenTestInFrame1():
-    testin1 = FrameGenOnline.GenTestInFrame1(Coord(1, 1), Coord(1, 2), Coord(3, 3))
+    testin1 = FrameGenOnline.gen_testin_frame1(Coord(1, 1), Coord(1, 2), Coord(3, 3))
 
     assert testin1.length == 1
     assert testin1.sub_type == FST.TEST_IN_TYPE1
@@ -345,7 +341,7 @@ def test_Online_GenTestInFrame1():
 
 
 def test_Online_GenTestInFrame2():
-    testin2 = FrameGenOnline.GenTestInFrame2(Coord(1, 1), Coord(1, 2), Coord(3, 3))
+    testin2 = FrameGenOnline.gen_testin_frame2(Coord(1, 1), Coord(1, 2), Coord(3, 3))
 
     assert testin2.length == 1
     assert testin2.sub_type == FST.TEST_IN_TYPE2
@@ -359,7 +355,7 @@ def test_Online_GenTestInFrame2():
     "neuron_start_addr, n_neuron_ram", [(0, 1024), (100, 900), (512, 512)]
 )
 def test_Online_GenTestInFrame3(neuron_start_addr, n_neuron_ram):
-    testin3 = FrameGenOnline.GenTestInFrame3(
+    testin3 = FrameGenOnline.gen_testin_frame3(
         Coord(1, 1), Coord(1, 2), Coord(3, 3), neuron_start_addr, n_neuron_ram
     )
 
@@ -373,7 +369,7 @@ def test_Online_GenTestInFrame3(neuron_start_addr, n_neuron_ram):
     assert testin3.n_package == 2 * n_neuron_ram
 
     with pytest.raises(ValueError):
-        testin3 = FrameGenOnline.GenTestInFrame3(
+        testin3 = FrameGenOnline.gen_testin_frame3(
             Coord(1, 1), Coord(2, 2), Coord(10, 10), 0, 1025
         )
 
@@ -382,7 +378,7 @@ def test_Online_GenTestInFrame3(neuron_start_addr, n_neuron_ram):
     "neuron_start_addr, n_neuron_ram", [(0, 1024), (100, 900), (512, 512)]
 )
 def test_Online_GenTestInFrame4(neuron_start_addr, n_neuron_ram):
-    testin4 = FrameGenOnline.GenTestInFrame4(
+    testin4 = FrameGenOnline.gen_testin_frame4(
         Coord(1, 1), Coord(1, 2), Coord(3, 3), neuron_start_addr, n_neuron_ram
     )
 
@@ -396,14 +392,14 @@ def test_Online_GenTestInFrame4(neuron_start_addr, n_neuron_ram):
     assert testin4.n_package == 16 * n_neuron_ram
 
     with pytest.raises(ValueError):
-        testin4 = FrameGenOnline.GenTestInFrame4(
+        testin4 = FrameGenOnline.gen_testin_frame4(
             Coord(1, 1), Coord(2, 2), Coord(10, 10), 0, 1025
         )
 
 
 def test_Online_GenTestOutFrame1():
-    params = ParamGenOnline.GenParamConfig1(True)
-    testout1 = FrameGenOnline.GenTestOutFrame1(
+    params = ParamGenOnline.GenLUT(True)
+    testout1 = FrameGenOnline.gen_testout_frame1(
         Coord(1, 0), Coord(2, 1), Coord(6, 7), params
     )
 
@@ -418,8 +414,8 @@ def test_Online_GenTestOutFrame1():
 
 
 def test_Online_GenTestOutFrame2():
-    params = ParamGenOnline.GenParamConfig2(Coord(2, 0), True)
-    testout2 = FrameGenOnline.GenTestOutFrame2(
+    params = ParamGenOnline.GenCoreParam(Coord(2, 0), True)
+    testout2 = FrameGenOnline.gen_testout_frame2(
         Coord(2, 0), Coord(2, 1), Coord(6, 7), params
     )
 
@@ -437,10 +433,8 @@ def test_Online_GenTestOutFrame2():
     "neuron_start_addr, n_neuron_ram", [(0, 1024), (100, 900), (512, 512)]
 )
 def test_Online_GenTestOutFrame3(neuron_start_addr, n_neuron_ram):
-    info, contents = ParamGenOnline.GenParamConfig3(
-        neuron_start_addr, n_neuron_ram, True
-    )
-    testout3 = FrameGenOnline.GenTestOutFrame3(
+    info, contents = ParamGenOnline.GenNeuronRAM(neuron_start_addr, n_neuron_ram, True)
+    testout3 = FrameGenOnline.gen_testout_frame3(
         Coord(1, 0), Coord(2, 1), Coord(6, 7), neuron_start_addr, n_neuron_ram, contents
     )
 
@@ -456,7 +450,7 @@ def test_Online_GenTestOutFrame3(neuron_start_addr, n_neuron_ram):
     assert getattr(testout3, "test_chip_coord") == Coord(1, 0)
 
     with pytest.raises(ValueError):
-        testout3 = FrameGenOffline.GenTestOutFrame3(
+        testout3 = FrameGenOffline.gen_testout_frame3(
             Coord(1, 1), Coord(2, 2), Coord(10, 10), 0, 1025, contents
         )
 
@@ -465,10 +459,8 @@ def test_Online_GenTestOutFrame3(neuron_start_addr, n_neuron_ram):
     "neuron_start_addr, n_weight_ram", [(0, 1024), (100, 900), (512, 512)]
 )
 def test_Online_GenTestOutFrame4(neuron_start_addr, n_weight_ram):
-    info, contents = ParamGenOnline.GenParamConfig4(
-        neuron_start_addr, n_weight_ram, True
-    )
-    testout4 = FrameGenOnline.GenTestOutFrame4(
+    info, contents = ParamGenOnline.GenWeightRAM(neuron_start_addr, n_weight_ram, True)
+    testout4 = FrameGenOnline.gen_testout_frame4(
         Coord(15, 0),
         Coord(2, 1),
         Coord(6, 7),
@@ -489,6 +481,6 @@ def test_Online_GenTestOutFrame4(neuron_start_addr, n_weight_ram):
     assert getattr(testout4, "test_chip_coord") == Coord(15, 0)
 
     with pytest.raises(ValueError):
-        testout4 = FrameGenOffline.GenTestOutFrame4(
+        testout4 = FrameGenOffline.gen_testout_frame4(
             Coord(1, 1), Coord(2, 2), Coord(10, 10), 0, 1025, contents
         )
