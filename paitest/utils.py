@@ -1,4 +1,4 @@
-from typing import List, Optional, Set, Tuple, Union
+from typing import List, Optional, Tuple, Union
 from paitest._types import CoordLike
 from paitest.coord import Coord, CoreType, ReplicationId
 
@@ -101,31 +101,33 @@ def get_replication_id(dest_coords: List[Coord]) -> ReplicationId:
     """
     Arguments:
         - dest_coords: the list of coordinates which are the destinations of a frame.
-    
+
     Return:
         The replication ID.
     """
     baseCore = dest_coords[0]
     rid = ReplicationId(0, 0)
-    
+
     for coord in dest_coords:
         rid |= baseCore ^ coord
-    
+
     return rid
 
 
-def get_multicast_cores(base_coord: Coord, repilication_id: ReplicationId) -> List[Coord]:
+def get_multicast_cores(
+    base_coord: Coord, repilication_id: ReplicationId
+) -> List[Coord]:
     cores: List[Coord] = []
     cores.append(base_coord)
-    
+
     for i in range(10):
         if (repilication_id >> i) & 1:
             temp = []
             for core in cores:
                 temp.append(core ^ ReplicationId.from_tuple(bin_split(1 << i, 5)))
-            
+
             cores.extend(temp)
-    
+
     return cores
 
 
@@ -137,5 +139,14 @@ def to_coord(coordlike: CoordLike) -> Coord:
             )
 
         return Coord.from_tuple(coordlike)
-    
+
     return coordlike
+
+
+def to_coords(coordlikes: Union[CoordLike, List[CoordLike]]) -> List[Coord]:
+    if isinstance(coordlikes, list):
+        coords = [to_coord(i) for i in coordlikes]
+    else:
+        coords = [to_coord(coordlikes)]
+
+    return coords
