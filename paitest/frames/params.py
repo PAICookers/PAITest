@@ -20,6 +20,37 @@ def test_chip_addr_combine(high3: int, low7: int) -> Coord:
     return Coord.from_tuple(bin_split(addr, 5))
 
 
+def gen_package_info(start_addr: int, n_package: int, _type: PackageType) -> int:
+    """Generate a certain package information of a `FramePackage`,
+    for offline & online both.
+    """
+    return bin_combine_x(
+        start_addr,
+        _type.value,
+        n_package,
+        pos=[
+            FM.GENERAL_PACKAGE_SRAM_START_ADDR_OFFSET,
+            FM.GENERAL_PACKAGE_TYPE_OFFSET,
+        ],
+    )
+
+
+def gen_package_info_for_group(start_addr: int, n_package: int) -> Tuple[int, int, int]:
+    """Generate informations for a test group:
+
+    Returns:
+        - [0]: configuration.
+        - [1]: test input.
+        - [2]: test output.
+    """
+    info = []
+
+    for item in PackageType:
+        info.append(gen_package_info(start_addr, n_package, item))
+
+    return tuple(info)
+
+
 class ParamGen(ABC):
     @staticmethod
     @abstractmethod
@@ -41,27 +72,14 @@ class ParamGen(ABC):
     def gen_param_config4() -> ...:
         raise NotImplementedError
 
-    @staticmethod
-    def gen_ram_info(start_addr: int, _type: PackageType, n_package: int) -> int:
-        """Generate a certain package information of a `FramePackage`,
-        for offline & online both.
-        """
-        return bin_combine_x(
-            start_addr,
-            _type.value,
-            n_package,
-            pos=[
-                FM.GENERAL_PACKAGE_SRAM_START_ADDR_OFFSET,
-                FM.GENERAL_PACKAGE_TYPE_OFFSET,
-            ],
-        )
-
 
 class ParamGenOffline(ParamGen):
     """Parameter generation methods for offline cores"""
 
     @staticmethod
-    def gen_param_config1(is_random: bool, seed: Optional[int] = None) -> Tuple[int, ...]:
+    def gen_param_config1(
+        is_random: bool, seed: Optional[int] = None
+    ) -> Tuple[int, ...]:
         """Generate random seed for configuration frame & test output frame type I.
 
         Random seed = [30bit] + [30bit] + [26'b0 + 4bit]
@@ -121,7 +139,7 @@ class ParamGenOffline(ParamGen):
     @staticmethod
     def gen_param_config3(
         sram_start_addr: int, n_neuron_ram: int, is_random: bool
-    ) -> Tuple[int, Tuple[int, ...]]:
+    ) -> Tuple[int, ...]:
         """Generate neuron RAM for configuration frame type III.
 
         Arguments:
@@ -140,15 +158,8 @@ class ParamGenOffline(ParamGen):
         NOTE: `n_package` = 4 * `n_neuron_ram`.
               `sram_start_addr` + `n_neuron_ram` <= 512.
         """
-        if sram_start_addr + n_neuron_ram > 512:
-            raise ValueError(
-                f"SRAM start address + number of neuron rams exceeds the limit 512!({sram_start_addr + n_neuron_ram})"
-            )
-
-        n_package = 4 * n_neuron_ram
-        info = ParamGen.gen_ram_info(sram_start_addr, PackageType.CONFIG, n_package)
-
         contents = []
+
         if is_random:
             for i in range(n_neuron_ram):
                 for _ in range(3):
@@ -158,12 +169,12 @@ class ParamGenOffline(ParamGen):
         else:
             raise NotImplementedError
 
-        return info, tuple(contents)
+        return tuple(contents)
 
     @staticmethod
     def gen_param_config4(
         sram_start_addr: int, n_weight_ram: int, is_random: bool
-    ) -> Tuple[int, Tuple[int, ...]]:
+    ) -> Tuple[int, ...]:
         """Generate weight RAM for configuration frame type IV.
 
         Arguments:
@@ -182,28 +193,21 @@ class ParamGenOffline(ParamGen):
         NOTE: `n_package` = 18 * `n_weight_ram`.
               `sram_start_addr` + `n_weight_ram` <= 512
         """
-        if sram_start_addr + n_weight_ram > 512:
-            raise ValueError(
-                f"SRAM start address + number of weight rams exceeds the limit 512!({sram_start_addr + n_weight_ram})"
-            )
-
-        n_package = 18 * n_weight_ram
-        info = ParamGen.gen_ram_info(sram_start_addr, PackageType.CONFIG, n_package)
-
         contents = []
+
         if is_random:
-            for i in range(n_package):
+            for i in range(18 * n_weight_ram):
                 contents.append(random.randint(0, FM.GENERAL_MASK))
         else:
             raise NotImplementedError
 
-        return info, tuple(contents)
+        return tuple(contents)
 
     """Methods aliases"""
-    GenRandomSeed = gen_param_config1
-    GenParamReg = gen_param_config2
-    GenNeuronRAM = gen_param_config3
-    GenWeightRAM = gen_param_config4
+    gen_random_seed = gen_param_config1
+    gen_param_reg = gen_param_config2
+    gen_neuron_ram = gen_param_config3
+    gen_weight_ram = gen_param_config4
 
 
 class ParamGenOnline(ParamGen):
@@ -272,7 +276,7 @@ class ParamGenOnline(ParamGen):
     @staticmethod
     def gen_param_config3(
         neuron_start_addr: int, n_neuron_ram: int, is_random: bool
-    ) -> Tuple[int, Tuple[int, ...]]:
+    ) -> Tuple[int, ...]:
         """Generate neuron RAM for configuration frame type III.
 
         Arguments:
@@ -292,10 +296,8 @@ class ParamGenOnline(ParamGen):
                 f"Neurons start address + number of neuron rams exceeds the limit 1024!({neuron_start_addr + n_neuron_ram})"
             )
 
-        n_package = 2 * n_neuron_ram
-        info = ParamGen.gen_ram_info(neuron_start_addr, PackageType.CONFIG, n_package)
-
         contents = []
+
         if is_random:
             for i in range(n_neuron_ram):
                 for _ in range(2):
@@ -303,12 +305,12 @@ class ParamGenOnline(ParamGen):
         else:
             raise NotImplementedError
 
-        return info, tuple(contents)
+        return tuple(contents)
 
     @staticmethod
     def gen_param_config4(
         neuron_start_addr: int, n_neuron_ram: int, is_random: bool
-    ) -> Tuple[int, Tuple[int, ...]]:
+    ) -> Tuple[int, ...]:
         """Generate weight RAM for configuration frame type IV.
 
         Arguments:
@@ -328,11 +330,9 @@ class ParamGenOnline(ParamGen):
                 f"Neurons start address + number of neuron rams exceeds the limit 1024!({neuron_start_addr + n_neuron_ram})"
             )
 
-        n_package = 16 * n_neuron_ram
         n_ram_per_neuron = 8
-        info = ParamGen.gen_ram_info(neuron_start_addr, PackageType.CONFIG, n_package)
-
         contents = []
+
         if is_random:
             for i in range(n_neuron_ram):
                 for j in range(n_ram_per_neuron):
@@ -341,10 +341,10 @@ class ParamGenOnline(ParamGen):
         else:
             raise NotImplementedError
 
-        return info, tuple(contents)
+        return tuple(contents)
 
     """Methods aliases"""
-    GenLUT = gen_param_config1
-    GenCoreParam = gen_param_config2
-    GenNeuronRAM = gen_param_config3
-    GenWeightRAM = gen_param_config4
+    gen_lut = gen_param_config1
+    gen_core_param = gen_param_config2
+    gen_neuron_ram = gen_param_config3
+    gen_weight_ram = gen_param_config4
