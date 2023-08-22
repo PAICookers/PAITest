@@ -45,8 +45,8 @@ def gen_package_info_for_group(start_addr: int, n_package: int) -> Tuple[int, in
     """
     info = []
 
-    for item in PackageType:
-        info.append(gen_package_info(start_addr, n_package, item))
+    for k, v in PackageType.__members__.items():
+        info.append(gen_package_info(start_addr, n_package, v))
 
     return tuple(info)
 
