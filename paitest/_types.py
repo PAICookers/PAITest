@@ -1,4 +1,4 @@
-from enum import Enum, IntEnum, unique
+from enum import Enum, unique
 from typing import TypeVar, List, Tuple
 from paitest.coord import Coord
 

@@ -1,11 +1,14 @@
 from abc import ABC, abstractmethod
 import random
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 import warnings
 from paitest.utils import bin_split, bin_combine, bin_combine_x
 from .mask import FrameMask as FM, OfflineConfigFrameMask as OFF_CFM
 from paitest._types import PackageType
 from paitest.coord import Coord
+
+
+__all__ = ["ParamGenOffline", "ParamGenOnline"]
 
 
 def test_chip_coord_split(coord: Coord) -> Tuple[int, int]:
@@ -158,6 +161,11 @@ class ParamGenOffline(ParamGen):
         NOTE: `n_package` = 4 * `n_neuron_ram`.
               `sram_start_addr` + `n_neuron_ram` <= 512.
         """
+        if sram_start_addr + n_neuron_ram > 512:
+            raise ValueError(
+                f"SRAM start address + number of neurons exceeds the limit 512!({sram_start_addr + n_neuron_ram})"
+            )
+        
         contents = []
 
         if is_random:
@@ -193,6 +201,11 @@ class ParamGenOffline(ParamGen):
         NOTE: `n_package` = 18 * `n_weight_ram`.
               `sram_start_addr` + `n_weight_ram` <= 512
         """
+        if sram_start_addr + n_weight_ram > 512:
+            raise ValueError(
+                f"SRAM start address + number of neurons exceeds the limit 512!({sram_start_addr + n_weight_ram})"
+            )
+
         contents = []
 
         if is_random:
@@ -214,7 +227,7 @@ class ParamGenOnline(ParamGen):
     """Parameter generation methods for online cores"""
 
     @staticmethod
-    def gen_param_config1(is_random: bool, *LUT: int) -> Tuple[int, ...]:
+    def gen_param_config1(is_random: bool, lut: Optional[List[int]] = None) -> Tuple[int, ...]:
         """Generate LUT for configuration frame type I"""
         params = []
 

@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from typing import Tuple, Optional, TypeVar
-from .params import ParamGenOffline, ParamGenOnline, gen_package_info_for_group
 from .mask import FrameMask as FM
 from paitest.coord import Coord, CoreType, ReplicationId
 from paitest._types import (
@@ -9,6 +8,9 @@ from paitest._types import (
     FrameArray,
     PackageType,
 )
+
+
+__all__ = ["Frame", "FrameGroup", "FramePackage", "FrameGenOffline", "FrameGenOnline"]
 
 
 def sub2main_type(subtype: FST) -> FMT:
@@ -659,7 +661,7 @@ class FrameGenOnline(FrameGen):
         core_coord: Coord,
         rid: ReplicationId,
         core_reg: FrameArray,
-    ) -> Frame:
+    ) -> FrameGroup:
         return FrameGroup.get_frame_group(
             FST.TEST_OUT_TYPE2, test_chip_coord, core_coord, rid, core_reg
         )

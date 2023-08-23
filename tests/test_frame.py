@@ -73,6 +73,12 @@ def test_Offline_GenConfigFrame3(sram_start_addr, n_neuron_ram):
     assert config3.start_addr == sram_start_addr
     assert config3.package_type == PackageType.CONFIG
     assert config3.n_package == 4 * n_neuron_ram
+    
+    with pytest.raises(ValueError):
+        contents = ParamGenOffline.gen_neuron_ram(0, 513, True)
+        config3 = FrameGenOffline.gen_config_frame3(
+            Coord(1, 1), Coord(2, 2), ReplicationId(10, 10), info, contents
+        )
 
 
 @pytest.mark.parametrize(
@@ -309,6 +315,12 @@ def test_Online_GenConfigFrame3(neuron_start_addr, n_neuron_ram):
     assert config3.start_addr == neuron_start_addr
     assert config3.package_type == PackageType.CONFIG
     assert config3.n_package == 2 * n_neuron_ram
+    
+    with pytest.raises(ValueError):
+        contents = ParamGenOnline.gen_neuron_ram(0, 1025, True)
+        config3 = FrameGenOnline.gen_config_frame3(
+            Coord(1, 1), Coord(2, 2), ReplicationId(10, 10), info, contents
+        )
 
 
 @pytest.mark.parametrize(
@@ -330,6 +342,12 @@ def test_Online_GenConfigFrame4(neuron_start_addr, n_neuron_ram):
     assert config4.start_addr == neuron_start_addr
     assert config4.package_type == PackageType.CONFIG
     assert config4.n_package == 16 * n_neuron_ram
+    
+    with pytest.raises(ValueError):
+        contents = ParamGenOnline.gen_neuron_ram(0, 1025, True)
+        config4 = FrameGenOnline.gen_config_frame4(
+            Coord(1, 1), Coord(2, 2), ReplicationId(10, 10), info, contents
+        )
 
 
 def test_Online_GenTestInFrame1():

@@ -189,7 +189,7 @@ class Coord:
 
     def __xor__(self, __other: Union["Coord", "ReplicationId"]) -> "ReplicationId":
         return ReplicationId(self.x ^ __other.x, self.y ^ __other.y)
-    
+
     def __hash__(self) -> int:
         return hash(self.address)
 
@@ -338,7 +338,6 @@ class CoordOffset:
 
 
 class ReplicationId(Coord):
-    
     def __and__(self, __other: Union[Coord, "ReplicationId"]) -> "ReplicationId":
         return ReplicationId(self.x & __other.x, self.y & __other.y)
 
